@@ -9,7 +9,10 @@ This section is aimed at getting a user to a working state starting with a machi
 ### Prerequisites ###
 ```
 $ sudo apt-get update
-$ sudo apt-get -y install gcc g++ python gcc g++ python python-dev qt4-dev-tools libqt4-dev mercurial bzr cmake libc6-dev libc6-dev-i386 g++-multilib gdb valgrind gsl-bin libgsl2 libgsl2:i386 flex bison libfl-dev tcpdump sqlite sqlite3 libsqlite3-dev libxml2 libxml2-dev libgtk2.0-0 libgtk2.0-dev vtun lxc git
+$ sudo apt-get -y install gcc g++ python gcc g++ python python-dev qt4-dev-tools libqt4-dev mercurial \
+bzr cmake libc6-dev libc6-dev-i386 g++-multilib gdb valgrind gsl-bin libgsl2 libgsl2:i386 flex bison \
+libfl-dev tcpdump sqlite sqlite3 libsqlite3-dev libxml2 libxml2-dev libgtk2.0-0 libgtk2.0-dev \
+vtun lxc git
 ```
 
 ### Downloading LoRaWAN-NS3 ###
