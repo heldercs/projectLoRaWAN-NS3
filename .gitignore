@@ -1,3 +1,9 @@
 /.dir-locals.el
 *.png
 *.dat
+.lock-waf_linux2_build
+.waf-1.8.19-b1fc8f7baef51bd2db4c2971909a568d/
+build/
+utils.pyc
+waf-tools
+wutils.pyc
