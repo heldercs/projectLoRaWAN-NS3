@@ -39,7 +39,7 @@ touch ./TestResult/test$trial/traffic-$interval/result-STAs.dat
 file2="./TestResult/test$trial/traffic-$interval/result-STAs.dat"
 echo "#numSta    Throughput(Kbps)    ProbSucc(%)    ProbLoss(%)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
 
-for numSta in 100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000
+for numSta in 100 200 300 400 500 # 600 700 800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000
 do
 		echo "trial:$trial-numSTA:$numSta"
 
@@ -57,6 +57,6 @@ do
 done
 echo "##### Simulation finish #####"
 echo "seinding email..."
-echo simulator finish | mail -s Simulator helderhdw@gmail.com
+echo simulation finish | mail -s Simulator helderhdw@gmail.com
 
 
