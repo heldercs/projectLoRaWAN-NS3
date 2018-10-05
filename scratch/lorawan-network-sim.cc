@@ -261,9 +261,9 @@ int main (int argc, char *argv[]){
   ***********/
 
   // Compute the number of gateways
-  //nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
-  nGateways = gatewayRings;
-  sAngle = (2*M_PI)/nGateways;
+  nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
+  //nGateways = gatewayRings;
+  sAngle = (2*M_PI)/(nGateways-1);
   
 	// Create the time value from the period
   Time appPeriod = Seconds (appPeriodSeconds);
@@ -363,7 +363,7 @@ int main (int argc, char *argv[]){
   mobility.Install (gateways);
 
   // Make it so that nodes are at a certain height > 0
-  for (NodeContainer::Iterator j = gateways.Begin ();
+  for (NodeContainer::Iterator j = gateways.Begin ()+1;
        j != gateways.End (); ++j){
       Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       Vector position = mobility->GetPosition ();
@@ -479,12 +479,13 @@ int main (int argc, char *argv[]){
 	uint32_t totalPacketsThrough = received;
   throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0 * nGateways);
 
-	double receivedProb = (double(received)/sent)*100/nGateways;
-	double lossProb = (double(interfered + noMoreReceivers + underSensitivity)/sent)*100/nGateways;
+	double probSucc = (double(received)/sent)*100;
+	//double lossProb = (double(interfered + noMoreReceivers + underSensitivity)/sent)*100/nGateways;
+  double probLoss = (double(interfered + noMoreReceivers)/sent)*100;
   
  	ofstream myfile;
   myfile.open (fileMetric, ios::out | ios::app);
-	myfile << nDevices << ", " << throughput << ", " << receivedProb << ", " << lossProb << "\n";
+	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << "\n";
   myfile.close();  
  
 
