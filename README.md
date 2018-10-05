@@ -25,12 +25,14 @@ $ sudo apt-get -y install libgtk2.0-0 libgtk2.0-dev
 $ sudo apt-get -y install vtun lxc
 $ sudo apt-get -y install git
 ```
+
 ### Downloading LoRaWAN-NS3 ###
 
 Let’s assume that you, as a user, wish to build LoRaWAN-NS3 in a local directory called Workspace. If you adopt the Workspace directory approach, you can get a copy of a release by typing the following into your Linux shell:
 ```
 $ git clone https://github.com/heldercs/projectLoRaWAN-NS3
 ```
+
 ### Building LoRaWAN-NS3 ###
 
 To configure the LoRaWAN-NS3 you will need to execute the following commands:
@@ -40,4 +42,30 @@ $ ./waf configure --build-profile=debug --enable-examples --enable-tests
 The build system is now configured and you can build the debug versions of the LoRaWAN-NS3 programs by simply typing
 ```
 $ ./waf
+```
+
+### Testing LoRaWAN-NS3 ###
+
+You can run the unit tests of the ns-3 distribution by running the ./test.py -c core script:
+```
+$ ./test.py -c core
+```
+These tests are run in parallel by Waf. You should eventually see a report saying that
+```
+246 of 249 tests passed (246 passed, 3 skipped, 0 failed, 0 crashed, 0 valgrind errors)
+```
+### Running the Script ###
+
+We typically run scripts under the control of Waf. This allows the build system to ensure that the shared library paths are set correctly and that the libraries are available at run time. To run the LoRa program, simply to run the runSimulator shell script by typing the following:
+```
+$ ./runSimulator.sh gwRing rad gwRad simTime interval pEDs
+```
+in which the above parameters are defined as:
+```
+* gwRing   - Number of gateway rings to include;
+* rad      - The radius of the area to simulate;
+* gwRad    - The distance between two gateways;
+* simTime  - The time for which to simulate;
+* interval - The period in seconds to be used by periodically transmitting applications;
+* pED      - Whether or not to print a file containing the ED's positions;
 ```
