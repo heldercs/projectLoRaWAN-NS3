@@ -67,5 +67,12 @@ in which the above parameters are defined as:
 * gwRad    - The distance between two gateways;
 * simTime  - The time for which to simulate;
 * interval - The period in seconds to be used by periodically transmitting applications;
+* trial    - The tests result directory; 
 * pED      - Whether or not to print a file containing the ED's positions;
+```
+The results will be placed in TestReult:
+```
+$ ls TestResult/
+$ test0  test1  test2  test3  test4  test5
+
 ```
