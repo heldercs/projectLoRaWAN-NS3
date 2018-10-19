@@ -23,6 +23,8 @@
 #include "ns3/lora-net-device.h"
 #include "ns3/log.h"
 #include "ns3/mobility-helper.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/rng-seed-manager.h"
 
 namespace ns3 {
 
@@ -329,76 +331,45 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
     }
 }
 
-void
-LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer gateways, int trial)
-{
-	double dist=0;
-
+void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int trial){
   NS_LOG_FUNCTION_NOARGS ();
 
-  for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j)
-    {
+	int sf=7, min=7, max=8;
+	if(trial == 2)
+		max=9;
+
+	RngSeedManager::SetSeed (endDevices.GetN());
+
+	Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
+	uv->SetAttribute("Min", DoubleValue(min));	
+	uv->SetAttribute("Max", DoubleValue(max));	
+
+  for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
       Ptr<Node> object = *j;
-      Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
-      NS_ASSERT (position != 0);
       Ptr<NetDevice> netDevice = object->GetDevice (0);
       Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
       NS_ASSERT (loraNetDevice != 0);
       Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       NS_ASSERT (mac != 0);
-
-      // Get the distance to gateway 
-			for (NodeContainer::Iterator currentGw = gateways.Begin ();
-           currentGw != gateways.End (); ++currentGw)
-        {
-          // Compute the power received from the current gateway
-			 		Ptr<Node> curr = *currentGw;
-			    Ptr<MobilityModel> positionG = curr->GetObject<MobilityModel> ();
- 					dist = position->GetDistanceFrom(positionG);
-        }
-
-		  //std::cout << "trial: " << trial << "dis: " << dist << std::endl;
 			
-			switch (trial) {
-							case 1:
-											//NS_LOG_DEBUG("1");
-											if(dist <= 610 ){
-          							mac->SetDataRate (5);
-        							}else{      // Device is out of range. Assign SF12.
-        								mac->SetDataRate (0);
-        							}
+			sf = uv->GetInteger();
+			NS_LOG_DEBUG("SF: " << sf);	
+			
+			switch (sf) {
+							 case 7:
+											mac->SetDataRate(5);	
 											break;
-							case 2:	
-											//NS_LOG_DEBUG("2");
-											if(dist <= 310 ){
-          							mac->SetDataRate (5);
-      		 						}else if ( dist <= 610 ){
-          							mac->SetDataRate (4);
-        							}else{      // Device is out of range. Assign SF12.
-        								mac->SetDataRate (0);
-        							}
+							 case 8:
+											mac->SetDataRate(4);	
 											break;
-							case 3:	
-											//NS_LOG_DEBUG("3");
-											if(dist <= 210 ){
-          							mac->SetDataRate (5);
-       		 						}else if ( dist <= 410 ){
-          							mac->SetDataRate (4);
-        		 					}else if ( dist <= 610 ){
-          							mac->SetDataRate (3);
-        							}else{      // Device is out of range. Assign SF12.
-        								mac->SetDataRate (0);
-        							}
+							 case 9:
+											mac->SetDataRate(3);
 											break;
-							default:
-											//NS_LOG_DEBUG("def");
-											if(dist <= 910 ){
-          							mac->SetDataRate (5);
-        							}else{      // Device is out of range. Assign SF12.
-        								mac->SetDataRate (0);
-        							}	
-											break;
-			}/* -----  end switch  ----- */
-    }
+							 default:
+											mac->SetDataRate(0);	
+											 break;
+			 }/* -----  end switch  ----- */
+	}
 }
+
 }

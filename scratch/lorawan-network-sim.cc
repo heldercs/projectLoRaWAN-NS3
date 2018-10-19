@@ -18,6 +18,9 @@
  * =====================================================================================
  */
 
+#include <algorithm>
+#include <ctime>
+#include "ns3/lora-phy.h" 
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/gateway-lora-phy.h"
 #include "ns3/end-device-lora-mac.h"
@@ -36,13 +39,11 @@
 #include "ns3/random-variable-stream.h"
 #include "ns3/periodic-sender-helper.h"
 #include "ns3/command-line.h"
-#include <algorithm>
-#include <ctime>
 
 using namespace ns3;
 using namespace std;
 
-NS_LOG_COMPONENT_DEFINE ("ComplexLorawanNetworkSimulator");
+NS_LOG_COMPONENT_DEFINE ("LorawanNetworkSimulator");
 
 // Network settings
 int nDevices = 2000;
@@ -59,6 +60,9 @@ int interfered = 0;
 int underSensitivity = 0;
 int received = 0;
 int sent = 0;
+int packSucc = 0;
+int cnt=0;
+Time sumTip=Seconds(0);
 
 // Output control
 bool printEDs = true;
@@ -79,6 +83,7 @@ enum PacketOutcome {
 struct PacketStatus {
   Ptr<Packet const> packet;
   uint32_t senderId;
+	uint32_t packFlag; 
   int outcomeNumber;
   vector<enum PacketOutcome> outcomes;
 };
@@ -95,20 +100,24 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
           switch (status.outcomes.at (j)){
             case RECEIVED:
                 received += 1;
-            		break;
+		if (status.packFlag){
+			packSucc += 1;
+			status.packFlag = 0;
+		}
+            	break;
             case UNDER_SENSITIVITY:
                 underSensitivity += 1;
-            		break;
+           			break;
             case NO_MORE_RECEIVERS:
                 noMoreReceivers += 1;
-                break;
+             		break;
             case INTERFERED:
                 interfered += 1;
-                break;
+           			break;
             case UNSET:
                 break;
-						default:
-								break;
+	    default:
+	 	break;
             }
         }
       // Remove the packet from the tracker
@@ -116,17 +125,24 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
     }
 }
 
-void TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId){
+void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32_t systemId){
   NS_LOG_INFO ("Transmitted a packet from device " << systemId);
+	
   // Create a packetStatus
   PacketStatus status;
   status.packet = packet;
   status.senderId = systemId;
+  status.packFlag = 1;
   status.outcomeNumber = 0;
   status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
- 	sent += 1;
- 
-	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
+  sent += 1;
+	
+  if(cnt < nDevices){	
+ 	sumTip += LoraPhy::GetOnAirTime (packet, txParams);
+	NS_LOG_DEBUG("sumTip: " << sumTip.GetSeconds());
+	cnt++;
+  }
+  packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
 }
 
 void PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId){
@@ -175,7 +191,7 @@ time_t oldtime = time (0);
 // Periodically print simulation time
 void PrintSimulationTime (void){
   NS_LOG_INFO ("Time: " << Simulator::Now().GetHours());
-  cout << "Simulated time: " << Simulator::Now ().GetHours () << " hours" << endl;
+  cout << "Simulated time: " << Simulator::Now ().GetSeconds () << " seconds" << endl;
   cout << "Real time from last call: " << std::time (0) - oldtime << " seconds" << endl;
   oldtime = time (0);
   Simulator::Schedule (Minutes (30), &PrintSimulationTime);
@@ -214,8 +230,9 @@ int main (int argc, char *argv[]){
   string fileData="./scratch/mac-sta-dat.dat";
  	string pcapfile="./scratch/mac-s1g-slots";
 	string endDevFile="./TestResult/test";
-	int trial=1;
+	int trial=1, packLoss=0;
 	double angle=0, sAngle=0;
+	float G=0, S=0;
 
   CommandLine cmd;
   cmd.AddValue ("nDevices", "Number of end devices to include in the simulation", nDevices);
@@ -233,7 +250,7 @@ int main (int argc, char *argv[]){
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 
   // Set up logging
-  //LogComponentEnable ("ComplexLorawanNetworkSimulator", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LorawanNetworkSimulator", LOG_LEVEL_ALL);
   //LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   //LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   //LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
@@ -248,8 +265,8 @@ int main (int argc, char *argv[]){
   //LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
   //LogComponentEnable("LoraPhyHelper", LOG_LEVEL_ALL);
   //LogComponentEnable("Forwarder", LOG_LEVEL_ALL);
-	//LogComponentEnable("DeviceStatus", LOG_LEVEL_ALL);
-	//LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable("DeviceStatus", LOG_LEVEL_ALL);
+  //LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
   //LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   //LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
   //LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
@@ -418,7 +435,7 @@ int main (int argc, char *argv[]){
   NS_LOG_DEBUG ("Spreading factor");
 
   macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
-  //macHelper.SetSpreadingFactorsUp (endDevices, gateways, trial);
+  //macHelper.SetSpreadingFactorsUp (endDevices, trial);
 
 	/************************
   * Create Network Server *
@@ -475,27 +492,29 @@ int main (int argc, char *argv[]){
   /*************
   *  Results  *
   *************/
-	double throughput = 0;
-	uint32_t totalPacketsThrough = received;
-  throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0 * nGateways);
-
-	double probSucc = (double(received)/sent)*100;
-	//double lossProb = (double(interfered + noMoreReceivers + underSensitivity)/sent)*100/nGateways;
-  double probLoss = (double(interfered + noMoreReceivers)/sent)*100;
+  double throughput = 0;
+  packLoss = sent - packSucc;
+  uint32_t totalPacketsThrough = packSucc;
+  throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+  G =  (double)sumTip.GetSeconds()/appPeriodSeconds;
   
- 	ofstream myfile;
+  double probSucc = (double(packSucc)/sent)*100;
+  double probLoss = (double(packLoss)/sent)*100;
+  S = G*probSucc;  
+ 
+  ofstream myfile;
   myfile.open (fileMetric, ios::out | ios::app);
-	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << "\n";
+  myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << G << ", " << S << "\n";
   myfile.close();  
  
 
   myfile.open (fileData, ios::out | ios::app);
-	myfile << "sent: " << sent << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";
-	myfile << ">>>>>>>>>>>>>>>>>>" << "\n";
-	myfile << "numDev: " << nDevices << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
- 	myfile << "####################################################" << "\n\n";
+  myfile << "sent: " << sent << " succ: " << packSucc << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";
+  myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  myfile << "numDev: " << nDevices << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  myfile << "#######################################################################" << "\n\n";
   myfile.close();  
  
-	return(0);
+  return(0);
 }
 

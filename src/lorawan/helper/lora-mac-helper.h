@@ -114,10 +114,7 @@ public:
                                      NodeContainer gateways,
                                      Ptr<LoraChannel> channel);
 
-  static void SetSpreadingFactorsUp (NodeContainer endDevices,
-																		 NodeContainer gateways,
-																		 int trial);
-
+  static void SetSpreadingFactorsUp (NodeContainer endDevices, int trial);
 
 private:
 

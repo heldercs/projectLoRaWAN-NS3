@@ -248,7 +248,7 @@ protected:
    *
    * \see class CallBackTraceSource
    */
-  TracedCallback<Ptr<const Packet>, uint32_t> m_startSending;
+  TracedCallback<Ptr<Packet>, LoraTxParameters, uint32_t> m_startSending;
 
   /**
    * The trace source fired when a packet begins the reception process from the
