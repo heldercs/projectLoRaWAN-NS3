@@ -8,3 +8,6 @@ utils.pyc
 waf-tools
 wutils.pyc
 tags_dirs
+cscope.files
+cscope.out
+tags
