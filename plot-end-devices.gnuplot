@@ -5,6 +5,8 @@ reset
 set term pngcairo font "FreeSans, 10" size 1024, 768
 set output outFile
 
+set style line 1 lc rgb 'black' pt 9 ps 2
+
 # Use a good looking palette
 set palette defined ( 0 '#D53E4F',\
     1 '#F46D43',\
@@ -21,5 +23,8 @@ set style rect fc lt -1 fs solid 0.15 noborder
 # Filename of the data
 #filename='endDevices.dat'
 
+# load the building locations
+load 'buildings.dat'
+
 # Plot the data
-plot filename using 1:2:3 notitle with points pt 2 palette
+plot filename using 1:2:3 with points pt 7 palette t 'Nodes', filename2 using 1:2 with points ls 1 t 'Gateway'
