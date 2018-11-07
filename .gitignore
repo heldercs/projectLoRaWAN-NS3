@@ -11,3 +11,4 @@ tags_dirs
 cscope.files
 cscope.out
 tags
+test*
