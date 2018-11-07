@@ -68,12 +68,12 @@ int cnt=0;
 Time sumTip=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = false;
-bool buildingsEnabled = false;
+bool shadowingEnabled = true;
+bool buildingsEnabled = true;
 
 // Output control
 bool printEDs = true;
-bool printBuild = false;
+bool printBuild = true;
 time_t oldtime = time (0);
 
 /**********************
@@ -477,7 +477,6 @@ int main (int argc, char *argv[]){
 	/**********************
    	*  Handle buildings  *
    	**********************/
-
 	buildingHandler(endDevices, gateways);	
 
 	/************************
@@ -553,10 +552,6 @@ int main (int argc, char *argv[]){
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
   	appContainer.Start (Seconds(appStartTime));
   	appContainer.Stop (appStopTime);
-
-
-
-
 
  	/**********************
    	* Print output files *
