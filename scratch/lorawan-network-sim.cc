@@ -73,7 +73,7 @@ bool buildingsEnabled = true;
 
 // Output control
 bool printEDs = true;
-bool printBuild = true;
+bool printBuildings = true;
 time_t oldtime = time (0);
 
 /**********************
@@ -267,7 +267,7 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
   	BuildingsHelper::Install (gateways);
   	BuildingsHelper::MakeMobilityModelConsistent ();
 	
-	if(printBuild){
+	if(printBuildings){
 		std::ofstream myfile;
     	myfile.open ("buildings.dat");
     	std::vector<Ptr<Building> >::const_iterator it;
@@ -579,12 +579,20 @@ int main (int argc, char *argv[]){
   	packLoss = sent - packSucc;
   	uint32_t totalPacketsThrough = packSucc;
   	throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
-  	G =  (double)sumTip.GetSeconds()/appPeriodSeconds;
-  
-  	double probSucc = (double(packSucc)/sent)*100;
+
+ 	NS_LOG_DEBUG("sumT: " << sumTip.GetSeconds() << " int: " << appPeriodSeconds );
+  	
+	G =  (double)sumTip.GetSeconds()/appPeriodSeconds;
+
+ 
+  	double probSucc = (double(packSucc)/sent);
   	double probLoss = (double(packLoss)/sent)*100;
   	S = G*probSucc;  
- 
+	
+	NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
+
+  	probSucc = probSucc * 100;
+  
   	ofstream myfile;
   	myfile.open (fileMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << G << ", " << S << "\n";

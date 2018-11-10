@@ -22,21 +22,21 @@ if [ ! -d TestResult/ ]
 	mkdir TestResult/
 fi
 
-for trial in 0 1 2
-do
+#for trial in 0 1 2
+#do
 
-if [ $trial -eq 0 ]
-then
-	gwRing=1
-	gwRad=0
-elif [ $trial -eq 1 ]
-then
-	gwRing=2
-	gwRad=0
-else
-	gwRing=2
-	gwRad=4000
-fi  
+#if [ $trial -eq 0 ]
+#then
+#	gwRing=1
+#	gwRad=0
+#elif [ $trial -eq 1 ]
+#then
+#	gwRing=2
+#	gwRad=0
+#else
+#	gwRing=2
+#	gwRad=4000
+#fi  
 
 
 if [ ! -d TestResult/test$trial/ ]
@@ -72,7 +72,7 @@ do
   	./waf --run "lorawan-network-sim --nDevices=$numSta --gatewayRings=$gwRing --radius=$rad -gatewayRadius=$gwRad --simulationTime=$simTime --appPeriod=$interval --printEDs=$pEDs --file1=$file1 --file2=$file2 --trial=$trial"  > ./TestResult/test$trial/traffic-$interval/pcap-sta-$numSta/record-$numSta.txt 2>&1
 
 done
-done
+#done
 echo "##### Simulation finish #####"
 echo "seinding email..."
 echo simulation finish | mail -s Simulator helderhdw@gmail.com
