@@ -26,9 +26,6 @@ set cblab 'Spreading Factor' font "freeSans,16"
 # Set up style for buildings
 set style rect fc lt -1 fs solid 0.15 noborder
 
-#set ytics font ",10"
-#set ylabel "SFs" font "freeSans,16" offset 3,0,0
-
 # Filename of the data
 #filename='endDevices.dat'
 
