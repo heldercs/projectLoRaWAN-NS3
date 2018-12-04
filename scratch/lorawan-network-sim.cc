@@ -47,7 +47,7 @@
 using namespace ns3;
 using namespace std;
 
-NS_LOG_COMPONENT_DEFINE ("LorawanNetworkSimulator");
+NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
 // Network settings
 int nDevices = 2000;
@@ -64,16 +64,20 @@ int underSensitivity = 0;
 int received = 0;
 int sent = 0;
 int packSucc = 0;
-int cnt=0;
-Time sumTip=Seconds(0);
+int cntDev=0;
+int cntDel=0;
+
+// sum Time on Air
+Time sumToA=Seconds(0);
+Time sumDelay=NanoSeconds(0);
 
 // Channel model
-bool shadowingEnabled = true;
-bool buildingsEnabled = true;
+bool shadowingEnabled = false;
+bool buildingsEnabled = false;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = true;
+bool printBuildings = false;
 time_t oldtime = time (0);
 
 /**********************
@@ -91,7 +95,10 @@ enum PacketOutcome {
 struct PacketStatus {
 	Ptr<Packet const> packet;
 	uint32_t senderId;
-	uint32_t packFlag; 
+	uint32_t packFlag;
+	Time sndTime;
+	Time rcvTime;
+	Time duration; 
 	int outcomeNumber;
 	vector<enum PacketOutcome> outcomes;
 };
@@ -109,6 +116,13 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 					case RECEIVED:
 								received += 1;
 								if (status.packFlag){
+									//NS_LOG_INFO("ToA:" << status.duration);
+									NS_LOG_INFO ("Delay for device " << (status.rcvTime - status.sndTime)-status.duration);
+									if(cntDel < nDevices){
+										sumDelay += (status.rcvTime - status.sndTime)-status.duration;
+										NS_LOG_DEBUG("sumDely:" << sumDelay);
+										cntDel++; 
+									}
 									packSucc += 1;
 									status.packFlag = 0;
 								}
@@ -141,15 +155,19 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.packet = packet;
 	status.senderId = systemId;
 	status.packFlag = 1;
+	status.sndTime = Simulator::Now();
+	status.rcvTime = Time::Max();
 	status.outcomeNumber = 0;
 	status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
+	status.duration = LoraPhy::GetOnAirTime (packet, txParams);	
 	sent += 1;
-	
-	if(cnt < nDevices){	
- 		sumTip += LoraPhy::GetOnAirTime (packet, txParams);
-		NS_LOG_DEBUG("sumTip: " << sumTip.GetSeconds());
-		cnt++;
+
+	if(cntDev < nDevices){	
+ 		sumToA += LoraPhy::GetOnAirTime (packet, txParams);
+		NS_LOG_DEBUG("sumToA: " << sumToA.GetSeconds());
+		cntDev++;
   	}
+
   	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
 }
 
@@ -160,6 +178,7 @@ void PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId){
   	std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   	(*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
   	(*it).second.outcomeNumber += 1;
+	(*it).second.rcvTime = Simulator::Now(); 
 
   	CheckReceptionByAllGWsComplete (it);
 }
@@ -296,6 +315,7 @@ int main (int argc, char *argv[]){
 	int trial=1, packLoss=0;
 	double angle=0, sAngle=0;
 	float G=0, S=0;
+	Time avgDelay = NanoSeconds(0);
 
   	CommandLine cmd;
   	cmd.AddValue ("nDevices", "Number of end devices to include in the simulation", nDevices);
@@ -313,7 +333,7 @@ int main (int argc, char *argv[]){
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 
   	// Set up logging
-  	//LogComponentEnable ("LorawanNetworkSimulator", LOG_LEVEL_ALL);
+  	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
   	//LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   	//LogComponentEnable("CorrelatedShadowingPropagationLossModel", LOG_LEVEL_INFO);
@@ -364,8 +384,8 @@ int main (int argc, char *argv[]){
 
   	// Create the lora channel object
   	Ptr<LogDistancePropagationLossModel> loss = CreateObject<LogDistancePropagationLossModel> ();
-  	loss->SetPathLossExponent (3.76);
-  	loss->SetReference (1, 8.1);
+	loss->SetPathLossExponent (3.76);
+  	loss->SetReference (1, 7.7);
 
   	if(shadowingEnabled){
     	// Create the correlated shadowing component
@@ -416,10 +436,14 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
+  	//double x=300.0, y=300.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
+		//position.x = x;
+		//position.y = y;
+		//x++;y++;
       	position.z = 1.2;
       	mobility->SetPosition (position);
 	}
@@ -518,7 +542,19 @@ int main (int argc, char *argv[]){
   	NS_LOG_DEBUG ("Spreading factor");
 
   	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
-  	//macHelper.SetSpreadingFactorsUp (endDevices, trial);
+  	/*macHelper.SetSpreadingFactorsUp (endDevices);
+  	uint8_t count=5;
+	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
+		Ptr<Node> object = *j;
+    	Ptr<NetDevice> netDevice = object->GetDevice (0);
+      	Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
+      	NS_ASSERT (loraNetDevice != 0);
+      	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
+      	NS_ASSERT (mac != 0);
+    	
+		mac->SetDataRate(count);
+		count -=1;
+	}*/
 
 	/************************
   	* Create Network Server *
@@ -550,6 +586,7 @@ int main (int argc, char *argv[]){
   	ApplicationContainer appContainer = appHelper.Install (endDevices);
 	
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
+	NS_LOG_DEBUG("sTime:" << appStartTime << "  pTime:" << appStopTime);
   	appContainer.Start (Seconds(appStartTime));
   	appContainer.Stop (appStopTime);
 
@@ -566,7 +603,7 @@ int main (int argc, char *argv[]){
   	*  Simulation  *
   	****************/
 
-  	Simulator::Stop (appStopTime + Seconds(10));
+  	Simulator::Stop (appStopTime + Hours(1));
 
   	// PrintSimulationTime ();
   	Simulator::Run ();
@@ -580,24 +617,36 @@ int main (int argc, char *argv[]){
   	uint32_t totalPacketsThrough = packSucc;
   	throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
- 	NS_LOG_DEBUG("sumT: " << sumTip.GetSeconds() << " int: " << appPeriodSeconds );
+ 	NS_LOG_DEBUG("sumT: " << sumToA.GetSeconds() << " int: " << appPeriodSeconds );
   	
-	G =  (double)sumTip.GetSeconds()/appPeriodSeconds;
+	//normalized offered traffic	
+	G =  (double)sumToA.GetSeconds()/appPeriodSeconds;
 
  
   	double probSucc = (double(packSucc)/sent);
   	double probLoss = (double(packLoss)/sent)*100;
+
+	//normalized throughput
   	S = G*probSucc;  
 	
 	NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
-
-  	probSucc = probSucc * 100;
+	
+	avgDelay = sumDelay/nDevices;
+  	NS_LOG_DEBUG("avgDelay: " << avgDelay);
+ 
+ 	probSucc = probSucc * 100;
   
   	ofstream myfile;
   	myfile.open (fileMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << G << ", " << S << "\n";
   	myfile.close();  
- 
+  
+
+	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+  	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+  	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+
 
   	myfile.open (fileData, ios::out | ios::app);
   	myfile << "sent: " << sent << " succ: " << packSucc << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";

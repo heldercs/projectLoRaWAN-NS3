@@ -179,19 +179,19 @@ LoraMacHelper::ConfigureForEuRegion (Ptr<GatewayLoraMac> gwMac) const
       gwPhy->ResetReceptionPaths ();
 
       std::vector<double> frequencies;
-      frequencies.push_back (867.1);
-      frequencies.push_back (867.3);
-      frequencies.push_back (867.5);
       frequencies.push_back (867.7);
-	    frequencies.push_back (867.9);
       frequencies.push_back (868.1);
       frequencies.push_back (868.3);
       frequencies.push_back (868.5);
+      frequencies.push_back (867.1);
+      frequencies.push_back (867.3);
+      frequencies.push_back (867.5);
+      frequencies.push_back (867.9);
 
       std::vector<double>::iterator it = frequencies.begin ();
 
       int receptionPaths = 0;
-      int maxReceptionPaths = 8;
+      int maxReceptionPaths = 1;
       while (receptionPaths < maxReceptionPaths)
         {
           if (it == frequencies.end ())
@@ -220,24 +220,25 @@ LoraMacHelper::ApplyCommonEuConfigurations (Ptr<LoraMac> loraMac) const
   //////////////////////
   // Default channels //
   //////////////////////
-  Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (867.1, 0, 5);
-  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (867.3, 0, 5);
-  Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (867.5, 0, 5);
-  Ptr<LogicalLoraChannel> lc4 = CreateObject<LogicalLoraChannel> (867.7, 0, 5);
-  Ptr<LogicalLoraChannel> lc5 = CreateObject<LogicalLoraChannel> (867.9, 0, 5);
-  Ptr<LogicalLoraChannel> lc6 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
-  Ptr<LogicalLoraChannel> lc7 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
-  Ptr<LogicalLoraChannel> lc8 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
-  channelHelper.AddChannel (lc1);
-  channelHelper.AddChannel (lc2);
+  Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (867.7, 0, 5);
+  /*  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (867.9, 0, 5);
+  Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
+  Ptr<LogicalLoraChannel> lc4 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
+  Ptr<LogicalLoraChannel> lc5 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
+  Ptr<LogicalLoraChannel> lc6 = CreateObject<LogicalLoraChannel> (867.1, 0, 5);
+  Ptr<LogicalLoraChannel> lc7 = CreateObject<LogicalLoraChannel> (867.3, 0, 5);
+  Ptr<LogicalLoraChannel> lc8 = CreateObject<LogicalLoraChannel> (867.5, 0, 5);
+*/  channelHelper.AddChannel (lc1);
+/* channelHelper.AddChannel (lc2);
   channelHelper.AddChannel (lc3);
   channelHelper.AddChannel (lc4);
   channelHelper.AddChannel (lc5);
   channelHelper.AddChannel (lc6);
   channelHelper.AddChannel (lc7);
   channelHelper.AddChannel (lc8);
+*/
 
-
+  
   loraMac->SetLogicalLoraChannelHelper (channelHelper);
 
   ///////////////////////////////////////////////
@@ -330,14 +331,12 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         }
     }
 }
-
-void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int trial){
+  
+void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices){
   NS_LOG_FUNCTION_NOARGS ();
 
 	int sf=7, min=7, max=8;
-	if(trial == 2)
-		max=9;
-
+	
 	RngSeedManager::SetSeed (endDevices.GetN());
 
 	Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
@@ -356,18 +355,27 @@ void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int trial){
 			NS_LOG_DEBUG("SF: " << sf);	
 			
 			switch (sf) {
-							 case 7:
+							 	case 7:
 											mac->SetDataRate(5);	
 											break;
-							 case 8:
+							 	case 8:
 											mac->SetDataRate(4);	
 											break;
-							 case 9:
-											mac->SetDataRate(3);
+								case 9:
+											mac->SetDataRate(3);	
 											break;
-							 default:
+								case 10:
+											mac->SetDataRate(2);	
+											break;
+								case 11:
+											mac->SetDataRate(1);	
+											break;
+								case 12:
 											mac->SetDataRate(0);	
-											 break;
+											break;
+								default:
+											mac->SetDataRate(0);	
+											break;
 			 }/* -----  end switch  ----- */
 	}
 }
