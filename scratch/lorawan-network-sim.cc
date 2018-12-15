@@ -64,12 +64,12 @@ int underSensitivity = 0;
 int received = 0;
 int sent = 0;
 int packSucc = 0;
-int cntDev=0;
-int cntDel=0;
+int cntDevices=0;
+int cntDelay=0;
 
 // sum Time on Air
 Time sumToA=Seconds(0);
-Time sumDelay=NanoSeconds(0);
+Time sumDelay=Seconds(0);
 
 // Channel model
 bool shadowingEnabled = false;
@@ -78,6 +78,7 @@ bool buildingsEnabled = false;
 // Output control
 bool printEDs = true;
 bool printBuildings = false;
+bool printDelay = true;
 time_t oldtime = time (0);
 
 /**********************
@@ -116,12 +117,19 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 					case RECEIVED:
 								received += 1;
 								if (status.packFlag){
+									Time uDelay = (status.rcvTime - status.sndTime)-status.duration;
 									//NS_LOG_INFO("ToA:" << status.duration);
-									NS_LOG_INFO ("Delay for device " << (status.rcvTime - status.sndTime)-status.duration);
-									if(cntDel < nDevices){
-										sumDelay += (status.rcvTime - status.sndTime)-status.duration;
+									NS_LOG_INFO ("Delay for device " << uDelay);if(printDelay){
+  											ofstream myfile;
+  											myfile.open ("delay.dat", ios::out | ios::app);
+        									myfile << ", " << uDelay.GetNanoSeconds();
+    										myfile.close();
+										}
+									if(cntDelay < nDevices){
+										sumDelay += uDelay;
 										NS_LOG_DEBUG("sumDely:" << sumDelay);
-										cntDel++; 
+										cntDelay++;
+										
 									}
 									packSucc += 1;
 									status.packFlag = 0;
@@ -162,10 +170,10 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.duration = LoraPhy::GetOnAirTime (packet, txParams);	
 	sent += 1;
 
-	if(cntDev < nDevices){	
+	if(cntDevices < nDevices){	
  		sumToA += LoraPhy::GetOnAirTime (packet, txParams);
 		NS_LOG_DEBUG("sumToA: " << sumToA.GetSeconds());
-		cntDev++;
+		cntDevices++;
   	}
 
   	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
@@ -331,10 +339,19 @@ int main (int argc, char *argv[]){
   	cmd.Parse (argc, argv);
 	
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
-
+	
+	ofstream myfile;
+	myfile.open ("delay.dat", ios::out | ios::app);
+	myfile << nDevices;
+	myfile.close();
+	
   	// Set up logging
-  	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
-  	//LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  	LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
+  	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
+	//LogComponentEnable ("NetworkController", LOG_LEVEL_ALL);
+  	//LogComponentEnable ("NetworkControllerComponent", LOG_LEVEL_ALL);
+ 	//LogComponentEnable ("NetworkScheduler", LOG_LEVEL_ALL);
+ 	//LogComponentEnable ("NetworkStatus", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   	//LogComponentEnable("CorrelatedShadowingPropagationLossModel", LOG_LEVEL_INFO);
   	//LogComponentEnable("BuildingPenetrationLoss", LOG_LEVEL_INFO);
@@ -436,14 +453,15 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=300.0, y=300.0;
+  	double x=100.0, y=100.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
-		//position.x = x;
-		//position.y = y;
-		//x++;y++;
+		position.x = x;
+		position.y = y;
+		//x +=200;
+		//y +=200;
       	position.z = 1.2;
       	mobility->SetPosition (position);
 	}
@@ -464,8 +482,8 @@ int main (int argc, char *argv[]){
 		Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       	phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionCallback));
-//			Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-//			mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+	//	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+	//	mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   	/*********************
@@ -541,8 +559,8 @@ int main (int argc, char *argv[]){
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
 
-  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
-  	/*macHelper.SetSpreadingFactorsUp (endDevices);
+  	//macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  	//macHelper.SetSpreadingFactorsUp (endDevices);
   	uint8_t count=5;
 	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
 		Ptr<Node> object = *j;
@@ -554,7 +572,7 @@ int main (int argc, char *argv[]){
     	
 		mac->SetDataRate(count);
 		count -=1;
-	}*/
+	}
 
 	/************************
   	* Create Network Server *
@@ -636,13 +654,16 @@ int main (int argc, char *argv[]){
  
  	probSucc = probSucc * 100;
   
-  	ofstream myfile;
+	myfile.open ("delay.dat", ios::out | ios::app);
+	myfile << "\n";
+	myfile.close();
+	
   	myfile.open (fileMetric, ios::out | ios::app);
-  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << G << ", " << S << "\n";
+  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
   
 
-	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
