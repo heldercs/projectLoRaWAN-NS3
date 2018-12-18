@@ -57,6 +57,7 @@ double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 600;
 int appPeriodSeconds = 600;
+string fileDelay = "./scratch/delay.dat";
 
 int noMoreReceivers = 0;
 int interfered = 0;
@@ -121,7 +122,7 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 									//NS_LOG_INFO("ToA:" << status.duration);
 									NS_LOG_INFO ("Delay for device " << uDelay);if(printDelay){
   											ofstream myfile;
-  											myfile.open ("delay.dat", ios::out | ios::app);
+  											myfile.open (fileDelay, ios::out | ios::app);
         									myfile << ", " << uDelay.GetNanoSeconds();
     										myfile.close();
 										}
@@ -335,18 +336,19 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
   	cmd.AddValue ("file1", "files containing result information", fileData);
   	cmd.AddValue ("file2", "files containing result data", fileMetric);
+  	cmd.AddValue ("file3", "files containing result data", fileDelay);
   	cmd.AddValue ("trial", "files containing result data", trial);
   	cmd.Parse (argc, argv);
 	
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 	
 	ofstream myfile;
-	myfile.open ("delay.dat", ios::out | ios::app);
-	myfile << nDevices;
+	myfile.open (fileDelay, ios::out | ios::app);
+	myfile << nDevices << ":\n";
 	myfile.close();
 	
   	// Set up logging
-  	LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
+  	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
   	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
 	//LogComponentEnable ("NetworkController", LOG_LEVEL_ALL);
   	//LogComponentEnable ("NetworkControllerComponent", LOG_LEVEL_ALL);
@@ -453,13 +455,13 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	double x=100.0, y=100.0;
+  	//double x=100.0, y=100.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
-		position.x = x;
-		position.y = y;
+		//position.x = x;
+		//position.y = y;
 		//x +=200;
 		//y +=200;
       	position.z = 1.2;
@@ -559,9 +561,9 @@ int main (int argc, char *argv[]){
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
 
-  	//macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
   	//macHelper.SetSpreadingFactorsUp (endDevices);
-  	uint8_t count=5;
+  	/*uint8_t count=5;
 	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
 		Ptr<Node> object = *j;
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -572,7 +574,7 @@ int main (int argc, char *argv[]){
     	
 		mac->SetDataRate(count);
 		count -=1;
-	}
+	}*/
 
 	/************************
   	* Create Network Server *
@@ -654,8 +656,8 @@ int main (int argc, char *argv[]){
  
  	probSucc = probSucc * 100;
   
-	myfile.open ("delay.dat", ios::out | ios::app);
-	myfile << "\n";
+	myfile.open (fileDelay, ios::out | ios::app);
+	myfile << "\n\n";
 	myfile.close();
 	
   	myfile.open (fileMetric, ios::out | ios::app);
@@ -663,11 +665,11 @@ int main (int argc, char *argv[]){
   	myfile.close();  
   
 
-	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+/*	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-
+*/
 
   	myfile.open (fileData, ios::out | ios::app);
   	myfile << "sent: " << sent << " succ: " << packSucc << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";
