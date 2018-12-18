@@ -54,7 +54,11 @@ file1="./TestResult/test$trial/traffic-$interval/mac-STAs-GW-$gwRing.txt"
 
 touch ./TestResult/test$trial/traffic-$interval/result-STAs.dat
 file2="./TestResult/test$trial/traffic-$interval/result-STAs.dat"
-echo "#numSta    Throughput(Kbps)    ProbSucc(%)    ProbLoss(%)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
+echo "#numSta, Throughput(Kbps), ProbSucc(%), ProbLoss(%), avgDelay(nanoSeconds), G(offered traffic), S(throughput)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
+		
+touch ./TestResult/test$trial/delay.dat
+file3="./TestResult/test$trial/delay.dat"
+echo "number STA: delay (in nanoseconds) " >> ./TestResult/test$trial/delay.dat
 
 for numSta in 100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000
 do
@@ -69,7 +73,8 @@ do
 
 		echo "Time: $(date) $interval $numSta" >> TestResult/test$trial/time-record$numSta.txt
 
-  	./waf --run "lorawan-network-sim --nDevices=$numSta --gatewayRings=$gwRing --radius=$rad -gatewayRadius=$gwRad --simulationTime=$simTime --appPeriod=$interval --printEDs=$pEDs --file1=$file1 --file2=$file2 --trial=$trial"  > ./TestResult/test$trial/traffic-$interval/pcap-sta-$numSta/record-$numSta.txt 2>&1
+
+  	./waf --run "lorawan-network-sim --nDevices=$numSta --gatewayRings=$gwRing --radius=$rad -gatewayRadius=$gwRad --simulationTime=$simTime --appPeriod=$interval --printEDs=$pEDs --file1=$file1 --file2=$file2 --file3=$file3 --trial=$trial"  > ./TestResult/test$trial/traffic-$interval/pcap-sta-$numSta/record-$numSta.txt 2>&1
 
 done
 #done
