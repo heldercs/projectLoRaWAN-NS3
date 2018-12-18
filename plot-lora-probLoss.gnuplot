@@ -13,7 +13,7 @@ set xlabel "No. de EndDevices" font "times-Roman,16"
 set output './TestResult/probLoss.png'
 
 # Filename of the data
-filename='./TestResult/probLoss.dat'
+filename='./TestResult/result-STAs.dat'
 
 # Plot the data
 plot filename using 1:2 w lp lw 2 t 'free space', filename using 1:3 w lp lw 2 t 'buildings'
