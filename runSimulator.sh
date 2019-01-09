@@ -22,10 +22,10 @@ if [ ! -d TestResult/ ]
 	mkdir TestResult/
 fi
 
-#for trial in 0 1 2
+#for trial in 2 3
 #do
 
-#if [ $trial -eq 0 ]
+#if [ $trial -eq 2 ]
 #then
 #	gwRing=1
 #	gwRad=0
@@ -54,7 +54,7 @@ file1="./TestResult/test$trial/traffic-$interval/mac-STAs-GW-$gwRing.txt"
 
 touch ./TestResult/test$trial/traffic-$interval/result-STAs.dat
 file2="./TestResult/test$trial/traffic-$interval/result-STAs.dat"
-echo "#numSta, Throughput(Kbps), ProbSucc(%), ProbLoss(%), avgDelay(nanoSeconds), G(offered traffic), S(throughput)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
+echo "#numSta, Throughput(Kbps), ProbSucc(%), ProbLoss(%), ProbInter(%), ProbNoMo(%), ProbUSen(%), avgDelay(nanoSeconds), G(offered traffic), S(throughput)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
 		
 touch ./TestResult/test$trial/delay.dat
 file3="./TestResult/test$trial/delay.dat"
