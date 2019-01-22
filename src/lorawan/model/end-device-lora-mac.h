@@ -55,6 +55,14 @@ public:
    */
   virtual void Send (Ptr<Packet> packet);
 
+
+  /**
+   * Postpone transmission to the specified time and delete previously scheduled transmissions if present.
+   *
+   * \param nextTxDelay Delay at which the transmission will be performed.
+   */
+  virtual void postponeTransmission (Time nextTxDelay, Ptr<Packet>);
+
   /**
    * Receive a packet.
    *
@@ -95,6 +103,23 @@ public:
   /////////////////////////
   // Getters and Setters //
   /////////////////////////
+
+  /**
+  * Reset retransmission parameters contained in the structure LoraRetxParams
+  */
+  virtual void resetRetransmissionParameters ();
+
+  /**
+   * Set the maximum number of transmissions allowed.
+   *
+   * \param maxNumbTx The maximum number of transmissions allowed
+   */
+  void SetMaxNumberOfTransmissions (uint8_t maxNumbTx);
+
+  /**
+   * Set the maximum number of transmissions allowed.
+   */
+  uint8_t GetMaxNumberOfTransmissions (void);
 
   /**
    * Set the data rate this end device will use when transmitting. For End
@@ -305,12 +330,36 @@ public:
 private:
 
   /**
+   * Structure representing the parameters that will be used in the
+   * retransmission procedure.
+   */
+  struct LoraRetxParameters
+     {
+    Time firstAttempt;
+    Ptr<Packet> packet = 0;
+    bool waitingAck = false;
+    uint8_t retxLeft;
+  };
+
+  /**
+   * Maximum number of transmission allowed.
+   */
+  uint8_t m_maxNumTx;
+
+  /**
    * Randomly shuffle a Ptr<LogicalLoraChannel> vector.
    *
    * Used to pick a random channel on which to send the packet.
    */
   std::vector<Ptr<LogicalLoraChannel> > Shuffle
     (std::vector<Ptr<LogicalLoraChannel> > vector);
+
+
+  /**
+    * Find the minimum waiting time before the next possible transmission.
+    */
+  Time GetNextTransmissionDelay (void);
+
 
   /**
    * Find a suitable channel for transmission. The channel is chosen among the
@@ -363,11 +412,18 @@ private:
   Time m_receiveWindowDuration;
 
   /**
-   * The event of the closing of a receive window.
+   * The event of the closing the first receive window.
    *
    * This Event will be canceled if there's a successful reception of a packet.
    */
-  EventId m_closeWindow;
+  EventId m_closeFirstWindow;
+
+  /**
+   * The event of the closing the second receive window.
+   *
+   * This Event will be canceled if there's a successful reception of a packet.
+   */
+  EventId m_closeSecondWindow;
 
   /**
    * The event of the second receive window opening.
@@ -376,6 +432,21 @@ private:
    * successful.
    */
   EventId m_secondReceiveWindow;
+
+  /**
+   * The event of retransmitting a packet in a consecutive moment if an ACK is not received.
+   *
+   * This Event is used to cancel the retransmission if the ACK is found in ParseCommand function and
+   * if a newer packet is delivered from the application to be sent.
+   */
+  EventId m_nextTx;
+
+  /**
+   * The event of the closing of a receive window.
+   *
+   * This Event will be canceled if there's a successful reception of a packet.
+   */
+//  EventId m_closeWindow;
 
   /**
    * The address of this device.
@@ -397,7 +468,7 @@ private:
    */
   uint8_t m_rx1DrOffset;
 
-  /**
+    /**
    * The last known link margin.
    *
    * This value is obtained (and updated) when a LinkCheckAns Mac command is
@@ -428,6 +499,23 @@ private:
    * The message type to apply to packets sent with the Send method.
    */
   LoraMacHeader::MType m_mType;
+
+  /* Structure containing the retransmission parameters
+   * for this device.
+   */
+  struct LoraRetxParameters m_retxParams;
+
+
+  /////////////////
+  //  Callbacks  //
+  /////////////////
+
+  /**
+   * The trace source fired when the transmission procedure is finished.
+   *
+   * \see class CallBackTraceSource
+   */
+  TracedCallback<uint8_t, bool, Time, Ptr<Packet> > m_requiredTxCallback;
 
 };
 

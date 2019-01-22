@@ -37,12 +37,12 @@ int main (int argc, char *argv[])
 
 
   NodeContainer c;
-  c.Create (10000);
+  c.Create (10);
 
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::RandomDiscPositionAllocator",
-                                 "X", StringValue ("100.0"),
-                                 "Y", StringValue ("100.0"),
+                                 "X", DoubleValue (0.0),
+                                 "Y", DoubleValue (0.0),
                                  "Rho", StringValue ("ns3::UniformRandomVariable[Min=0|Max=30]"));
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (c);

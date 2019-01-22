@@ -97,7 +97,9 @@ enum PacketOutcome {
 struct PacketStatus {
 	Ptr<Packet const> packet;
 	uint32_t senderId;
-	uint32_t packFlag;
+	uint8_t rtxNum;
+	bool rtxFlag;
+	bool packFlag;
 	Time sndTime;
 	Time rcvTime;
 	Time duration; 
@@ -137,13 +139,22 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 								}
             		break;
             		case UNDER_SENSITIVITY:
-                				underSensitivity += 1;
+								if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+                					underSensitivity += 1;
            			break;
             		case NO_MORE_RECEIVERS:
-                				noMoreReceivers += 1;
+								if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+                	   				noMoreReceivers += 1;
              		break;
             		case INTERFERED:
-                				interfered += 1;
+                				if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+                					interfered += 1;
            			break;
             		case UNSET:
                 	break;
@@ -163,6 +174,8 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	PacketStatus status;
 	status.packet = packet;
 	status.senderId = systemId;
+	status.rtxNum = txParams.retxLeft;
+	status.rtxFlag = txParams.retxFlag;
 	status.packFlag = 1;
 	status.sndTime = Simulator::Now();
 	status.rcvTime = Time::Max();
@@ -170,7 +183,7 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
 	status.duration = LoraPhy::GetOnAirTime (packet, txParams);	
 	sent += 1;
-
+	NS_LOG_DEBUG("flag:" << txParams.retxFlag << "num:" << (unsigned)txParams.retxLeft);	
 	if(cntDevices < nDevices){	
  		sumToA += LoraPhy::GetOnAirTime (packet, txParams);
 		NS_LOG_DEBUG("sumToA: " << sumToA.GetSeconds());
@@ -270,7 +283,7 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
   	double deltaY = 17;
   	int gridWidth = 2*radius/(xLength+deltaX);
   	int gridHeight = 2*radius/(yLength+deltaY);
-  	
+	
 	if (buildingsEnabled == false){
     	gridWidth = 0;
       	gridHeight = 0;
@@ -322,11 +335,13 @@ int main (int argc, char *argv[]){
  	string pcapfile="./scratch/mac-s1g-slots";
 	string endDevFile="./TestResult/test";
 	int trial=1, packLoss=0;
+  	uint32_t nSeed=1;
 	double angle=0, sAngle=0;
 	float G=0, S=0;
 	Time avgDelay = NanoSeconds(0);
 
   	CommandLine cmd;
+   	cmd.AddValue ("nSeed", "Number of seed to position", nSeed);
   	cmd.AddValue ("nDevices", "Number of end devices to include in the simulation", nDevices);
   	cmd.AddValue ("gatewayRings", "Number of gateway rings to include", gatewayRings);
   	cmd.AddValue ("radius", "The radius of the area to simulate", radius);
@@ -380,8 +395,10 @@ int main (int argc, char *argv[]){
   	/***********
   	*  Setup  *
   	***********/
-
-  	// Compute the number of gateways
+  	RngSeedManager::SetSeed(1);
+  	RngSeedManager::SetRun(nSeed);
+  	
+	// Compute the number of gateways
   	nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
   	//nGateways = gatewayRings;
   	sAngle = (2*M_PI)/(nGateways-1);
@@ -427,7 +444,6 @@ int main (int argc, char *argv[]){
   	*  Create the helpers  *
   	************************/
 
-
   	// Create the LoraPhyHelper
   	LoraPhyHelper phyHelper = LoraPhyHelper ();
   	phyHelper.SetChannel (channel);
@@ -455,15 +471,16 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=100.0, y=100.0;
+  	//double x=2900.0, y=2900.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
+		cout << "pos: " << position << endl; 
 		//position.x = x;
 		//position.y = y;
-		//x +=200;
-		//y +=200;
+		//x +=50;
+		//y +=50;
       	position.z = 1.2;
       	mobility->SetPosition (position);
 	}
@@ -484,8 +501,8 @@ int main (int argc, char *argv[]){
 		Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       	phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionCallback));
-	//	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-	//	mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+		//Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+		//mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   	/*********************
@@ -563,7 +580,7 @@ int main (int argc, char *argv[]){
 
   	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
   	//macHelper.SetSpreadingFactorsUp (endDevices);
-  	/*uint8_t count=5;
+  	/*  uint8_t count=5;
 	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
 		Ptr<Node> object = *j;
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -573,7 +590,7 @@ int main (int argc, char *argv[]){
       	NS_ASSERT (mac != 0);
     	
 		mac->SetDataRate(count);
-		count -=1;
+		//count -=1;
 	}*/
 
 	/************************
@@ -645,6 +662,9 @@ int main (int argc, char *argv[]){
  
   	double probSucc = (double(packSucc)/sent);
   	double probLoss = (double(packLoss)/sent)*100;
+	double probInte = (double(interfered)/sent)*100;
+	double probNoMo = (double(noMoreReceivers)/sent)*100;
+	double probUSen = (double(underSensitivity)/sent)*100;
 
 	//normalized throughput
   	S = G*probSucc;  
@@ -660,16 +680,18 @@ int main (int argc, char *argv[]){
 	myfile << "\n\n";
 	myfile.close();
 	
+   	cout << endl << endl << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
+
   	myfile.open (fileMetric, ios::out | ios::app);
-  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
-  	myfile.close();  
+  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+	myfile.close();  
   
 
-/*	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-*/
+
 
   	myfile.open (fileData, ios::out | ios::app);
   	myfile << "sent: " << sent << " succ: " << packSucc << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";

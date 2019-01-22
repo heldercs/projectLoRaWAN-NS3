@@ -33,6 +33,11 @@ LoraMac::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::LoraMac")
     .SetParent<Object> ()
     .SetGroupName ("lorawan")
+    .AddTraceSource ("SentNewPacket",
+                     "Trace source indicating a new packet "
+                     "arrived at the MAC layer",
+                     MakeTraceSourceAccessor (&LoraMac::m_sentNewPacket),
+                     "ns3::Packet::TracedCallback")
     .AddTraceSource ("ReceivedPacket",
                      "Trace source indicating a packet "
                      "was correctly received at the MAC layer",

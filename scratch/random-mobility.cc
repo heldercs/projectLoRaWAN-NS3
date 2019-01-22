@@ -40,22 +40,26 @@ int main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.Parse (argc, argv);
-
-  double angle = 0;
-  uint32_t num = 4;
-  double sAngle = (2*M_PI)/num;
+	
+  //SeedManager::SetSeed (1);  // Changes seed from default of 1 to 3
+  //SeedManager::SetRun (2);  // Changes run number from default of 1 to 7
+  RngSeedManager::SetSeed(1);
+  RngSeedManager::SetRun(10);
+  //double angle = 0;
+  uint32_t num = 10;
+  //double sAngle = (2*M_PI)/num;
   NodeContainer c;
   c.Create (num);
 
  
   MobilityHelper mobility;
-/*   mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator",
-                                 "X", StringValue ("10.0"),
-                                 "Y", StringValue ("10.0"),
-                                 "Rho", StringValue ("ns3::ExponentialRandomVariable[Mean=10|Bound=100]"));
+  mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator",
+                                 "X", DoubleValue (0.0),
+                                 "Y", DoubleValue (0.0),
+                                 "rho", DoubleValue (200));
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (c);
- 
+/*   
     mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator",
                                  "MinX", DoubleValue (-5.0),
                                  "MinY", DoubleValue (-5.0),
@@ -69,9 +73,9 @@ int main (int argc, char *argv[])
 */
   // Make it so that nodes are at a certain height > 0
 
-  Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
-  allocator->Add (Vector (0.0, 0.0, 0.0));
-  mobility.SetPositionAllocator (allocator);
+  //Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
+  //allocator->Add (Vector (0.0, 0.0, 0.0));
+  //mobility.SetPositionAllocator (allocator);
   mobility.Install (c);
   
   // Make it so that nodes are at a certain height > 0
@@ -85,19 +89,19 @@ int main (int argc, char *argv[])
   uint32_t i =0;
  
   while (i < num){
-	 cout << "angle: " << angle << " sin: " << sin(angle) << endl;
+	//cout << "angle: " << angle << " sin: " << sin(angle) << endl;
     Ptr<MobilityModel> mobi = c.Get (i)->GetObject<MobilityModel>();
     Vector position = mobi->GetPosition();
-    position.x = 10 * cos(angle);
-    position.y = 10 * sin(angle);
-    cout << position.x << " " << position.y << endl;
+    //position.x = 10 * cos(angle);
+    //position.y = 10 * sin(angle);
+    cout << "x:" << position.x << " y:" << position.y << endl;
  		i++;
-    angle+=sAngle;
+    //angle+=sAngle;
 	}
 
   //Config::Connect ("/NodeList/*/$ns3::MobilityModel/CourseChange", MakeCallback (&CourseChange));
   
-	Simulator::Run ();
+  Simulator::Run ();
 
   Simulator::Destroy ();
   return 0;

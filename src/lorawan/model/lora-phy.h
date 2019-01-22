@@ -36,10 +36,13 @@ namespace ns3 {
 
 class LoraChannel;
 
+
+
 /**
   * Structure to collect all parameters that are used to compute the duration of
   * a packet (excluding payload length).
   */
+
 struct LoraTxParameters
 {
   uint8_t sf = 7; //!< Spreading Factor
@@ -49,6 +52,8 @@ struct LoraTxParameters
   uint32_t nPreamble = 8; //!< Number of preamble symbols
   bool crcEnabled = 1; //!< Whether Cyclic Redundancy Check is enabled
   bool lowDataRateOptimizationEnabled = 0; //!< Whether Low Data Rate Optimization is enabled
+  bool retxFlag = false;
+  uint8_t retxLeft = 0;
 };
 
 /**
