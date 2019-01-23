@@ -73,12 +73,12 @@ Time sumToA=Seconds(0);
 Time sumDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = true;
-bool buildingsEnabled = true;
+bool shadowingEnabled = false;
+bool buildingsEnabled = false;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = true;
+bool printBuildings = false;
 bool printDelay = true;
 time_t oldtime = time (0);
 
@@ -476,7 +476,7 @@ int main (int argc, char *argv[]){
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
-		cout << "pos: " << position << endl; 
+		//cout << "pos: " << position << endl; 
 		//position.x = x;
 		//position.y = y;
 		//x +=50;
@@ -501,8 +501,8 @@ int main (int argc, char *argv[]){
 		Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       	phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionCallback));
-		//Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-		//mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+		Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+		mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   	/*********************
@@ -578,13 +578,10 @@ int main (int argc, char *argv[]){
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
 
-  	//macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
   	//macHelper.SetSpreadingFactorsUp (endDevices);
-<<<<<<< HEAD
   	/*  uint8_t count=5;
-=======
   	uint8_t count=5;
->>>>>>> 61c8c3e01b6221d189caa9db452622dae7e554f4
 	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
 		Ptr<Node> object = *j;
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -595,11 +592,7 @@ int main (int argc, char *argv[]){
     	
 		mac->SetDataRate(count);
 		//count -=1;
-<<<<<<< HEAD
 	}*/
-=======
-	}
->>>>>>> 61c8c3e01b6221d189caa9db452622dae7e554f4
 
 	/************************
   	* Create Network Server *
@@ -687,29 +680,18 @@ int main (int argc, char *argv[]){
 	myfile << "\n\n";
 	myfile.close();
 	
-<<<<<<< HEAD
-   	cout << endl << endl << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
-
-  	myfile.open (fileMetric, ios::out | ios::app);
-  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
-	myfile.close();  
-  
-
-	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
-=======
-   	cout << nDevices << ", " << throughput << ", " << probSucc << ", " << probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
-
+   	//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
+   	//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
   	myfile.open (fileMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
   
 
- 	cout << endl << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
->>>>>>> 61c8c3e01b6221d189caa9db452622dae7e554f4
-  	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
-  	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+ 	//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+  	//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+  	//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  	//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
   	myfile.open (fileData, ios::out | ios::app);

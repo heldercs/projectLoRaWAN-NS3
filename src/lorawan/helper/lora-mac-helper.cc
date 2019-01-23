@@ -191,7 +191,7 @@ LoraMacHelper::ConfigureForEuRegion (Ptr<GatewayLoraMac> gwMac) const
       std::vector<double>::iterator it = frequencies.begin ();
 
       int receptionPaths = 0;
-      int maxReceptionPaths = 1;
+      int maxReceptionPaths = 8;
       while (receptionPaths < maxReceptionPaths)
         {
           if (it == frequencies.end ())
@@ -221,22 +221,22 @@ LoraMacHelper::ApplyCommonEuConfigurations (Ptr<LoraMac> loraMac) const
   // Default channels //
   //////////////////////
   Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (867.7, 0, 5);
-  /*  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (867.9, 0, 5);
+  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (867.9, 0, 5);
   Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
   Ptr<LogicalLoraChannel> lc4 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
   Ptr<LogicalLoraChannel> lc5 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
   Ptr<LogicalLoraChannel> lc6 = CreateObject<LogicalLoraChannel> (867.1, 0, 5);
   Ptr<LogicalLoraChannel> lc7 = CreateObject<LogicalLoraChannel> (867.3, 0, 5);
   Ptr<LogicalLoraChannel> lc8 = CreateObject<LogicalLoraChannel> (867.5, 0, 5);
-*/  channelHelper.AddChannel (lc1);
-/* channelHelper.AddChannel (lc2);
+  channelHelper.AddChannel (lc1);
+  channelHelper.AddChannel (lc2);
   channelHelper.AddChannel (lc3);
   channelHelper.AddChannel (lc4);
   channelHelper.AddChannel (lc5);
   channelHelper.AddChannel (lc6);
   channelHelper.AddChannel (lc7);
   channelHelper.AddChannel (lc8);
-*/
+
 
   
   loraMac->SetLogicalLoraChannelHelper (channelHelper);

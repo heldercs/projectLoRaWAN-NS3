@@ -96,7 +96,7 @@ LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
       std::vector<double>::iterator it = frequencies.begin ();
 
       int receptionPaths = 0;
-      int maxReceptionPaths = 1;
+      int maxReceptionPaths = 8;
       while (receptionPaths < maxReceptionPaths)
         {
           if (it == frequencies.end ())
