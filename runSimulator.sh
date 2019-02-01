@@ -6,13 +6,13 @@ echo "parameters missing"
 exit 1
 fi
 
-gwRing=$1
-rad=$2
-gwRad=$3
-simTime=$4
-interval=$5
-trial=$6
-pEDs=$7
+gwRing=$2
+rad=$3
+gwRad=$4
+simTime=$5
+interval=$6
+trial=$7
+pEDs=$8
 
 
 echo "##### Simulation Start #####"
