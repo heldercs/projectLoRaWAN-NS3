@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <iostream>
+#include <fstream>
 #include "ns3/simulator.h"
 #include "ns3/nstime.h"
 #include "ns3/command-line.h"
@@ -22,8 +24,6 @@
 #include "ns3/rng-seed-manager.h"
 #include "ns3/double.h"
 #include "ns3/gnuplot.h"
-#include <iostream>
-#include <fstream>
 
 /**
  * \file
@@ -63,8 +63,9 @@ using namespace ns3;
 
 int main (int argc, char *argv[]){
 	CommandLine cmd;
-	int nSeed=3, nRun=6, num=0;
-	double x, y, min=1.0, max=60.0;
+	int nSeed=1, nRun=1; 
+	//int num=0;
+	double x, y;//, min=1.0, max=60.0;
  
   	std::string fileNameWithNoExtension = "plot-2d";
   	std::string graphicsFileName        = fileNameWithNoExtension + ".png";
@@ -73,6 +74,10 @@ int main (int argc, char *argv[]){
   	std::string dataTitle1               = "2-D Data1";
  	std::string dataTitle2               = "2-D Data2";
 
+
+  	cmd.AddValue ("nSeed", "Number of Seed for random variables", nSeed);
+	cmd.AddValue ("nRun", "Number of Run for random variables", nRun);
+	cmd.Parse (argc, argv);
 
 	// Instantiate the plot and set its title.
   	Gnuplot plot (graphicsFileName);
@@ -127,9 +132,6 @@ int main (int argc, char *argv[]){
   	// Close the plot file.
   	plotFile.close ();
 
-  	cmd.AddValue ("nSeed", "Number of Seed for random variables", nSeed);
-	cmd.AddValue ("nRun", "Number of Run for random variables", nRun);
-	cmd.Parse (argc, argv);
 
    	std::cout << "num seed:" << nSeed << std::endl;
 	std::cout << "num run:"  << nRun << std::endl;
@@ -137,15 +139,16 @@ int main (int argc, char *argv[]){
   	RngSeedManager::SetSeed (nSeed);
 	RngSeedManager::SetRun (nRun);
   
-	Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
+	Ptr<ExponentialRandomVariable> uv = CreateObject<ExponentialRandomVariable> ();
 	
-	uv->SetAttribute("Min", DoubleValue(min));	
-	uv->SetAttribute("Max", DoubleValue(max));	
-
-
-	for(int i=0; i<20; i++){
-		num = uv->GetInteger();
-  		std::cout << num << std::endl;
+	Time temp;	
+	//uv->SetAttribute("Min", DoubleValue(min));	
+	//uv->SetAttribute("Max", DoubleValue(max));	
+	uv->SetAttribute("Mean", DoubleValue(1800));
+	//uv->SetAttribute("Bound", DoubleValue(0.5));
+	for(int i=0; i<nRun; i++){
+		temp = Seconds(uv->GetValue());
+  		std::cout << temp.GetSeconds() << std::endl;
 	}	
 
 	return(0);

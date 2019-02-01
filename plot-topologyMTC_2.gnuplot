@@ -16,7 +16,7 @@ set style rect fc lt -1 fs solid 0.15 noborder
 #filename='endDevices.dat'
 
 # load the building locations
-load 'buildings.dat'
+#load 'buildings.dat'
 
 # Plot the data
-plot filename_edN using 1:2 with points ls 1 t 'ED Normal', filename_edA using 1:2 with points ls 2 t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'
+plot filename_edR using 1:2 with points ls 1 t 'ED Regular', filename_edA using 1:2 with points ls 2 t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'

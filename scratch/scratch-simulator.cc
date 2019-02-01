@@ -15,6 +15,7 @@
  */
 
 #include "ns3/core-module.h"
+#include "ns3/node-container.h"
 
 using namespace ns3;
 using namespace std;
@@ -23,10 +24,18 @@ using namespace std;
 NS_LOG_COMPONENT_DEFINE ("ScratchSimulator");
 
 int  main (int argc, char *argv[]){
-  NS_LOG_UNCOND ("Scratch Simulator");
+  	NS_LOG_UNCOND ("Scratch Simulator");
 
 	double scale = 10;
 	double shape = 2.5;
+	
+  	NodeContainer endDevices;
+  	endDevices.Create (3);
+
+	for (NodeContainer::Iterator j = endDevices.Begin (); j < endDevices.End(); ++j){
+		cout<< endDevices.GetN() << endl;
+	}
+
 	Ptr<ParetoRandomVariable> x = CreateObject<ParetoRandomVariable> ();
 	x->SetAttribute ("Scale", DoubleValue (scale));
 	x->SetAttribute ("Shape", DoubleValue (shape));
@@ -40,7 +49,7 @@ int  main (int argc, char *argv[]){
 	cout << "value=" << value << endl;
 	
 	Simulator::Run ();
-  Simulator::Destroy ();
+  	Simulator::Destroy ();
   
 	return(0);
 }

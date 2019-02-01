@@ -33,5 +33,5 @@ set style rect fc lt -1 fs solid 0.15 noborder
 #load 'buildings.dat'
 
 # Plot the data
-#plot filename_edN using 1:2:3 with points pt 7 palette t 'ED Normal', filename_edA using 1:2:3 with points pt 10 palette t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'
-plot filename_edN using 1:2:3 with points pt 7 palette t 'EDs', filename_gw using 1:2 with points ls 3 t 'Gateway'
+plot filename_edR using 1:2:3 with points pt 7 palette t 'ED Regular', filename_edA using 1:2:3 with points pt 10 palette t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'
+#plot filename_edR using 1:2:3 with points pt 7 palette t 'EDs', filename_gw using 1:2 with points ls 3 t 'Gateway'
