@@ -60,7 +60,7 @@ double radius = 800;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 3600;
 int appPeriodSeconds = 60;
-string fileDelay = "./TestResult/delay.dat";
+//string fileDelay = "./TestResult/delay.dat";
 
 typedef struct _Statistics{
 	int noMoreReceivers = 0;
@@ -91,7 +91,7 @@ bool buildingsEnabled = false;
 // Output control
 bool printEDs = true;
 bool printBuildings = false;
-bool printDelay = true;
+//bool printDelay = true;
 time_t oldtime = time (0);
 
 /**********************
@@ -138,13 +138,13 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 										Time uDelay = (status.rcvTime - status.sndTime)-status.duration;
 										//NS_LOG_INFO("ToA:" << status.duration);
 										NS_LOG_INFO ("Delay for device " << uDelay);
-										if(printDelay){
+/*  										if(printDelay){
   												ofstream myfile;
   												myfile.open (fileDelay, ios::out | ios::app);
         										myfile << ", " << uDelay.GetNanoSeconds();
     											myfile.close();
 										}
-										if(pktRegulars.cntDelay < nRegulars){
+*/										if(pktRegulars.cntDelay < nRegulars){
 											sumRegDelay += uDelay;
 											NS_LOG_DEBUG("sumDely:" << sumRegDelay);
 											pktRegulars.cntDelay++;
@@ -194,13 +194,13 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 									Time uDelay = (status.rcvTime - status.sndTime)-status.duration;
 									//NS_LOG_INFO("ToA:" << status.duration);
 									NS_LOG_INFO ("Delay for Alarm device " << uDelay);
-									if(printDelay){
+/*									if(printDelay){
   											ofstream myfile;
   											myfile.open (fileDelay, ios::out | ios::app);
         									myfile << ", " << uDelay.GetNanoSeconds();
     										myfile.close();
 									}
-  									if(pktAlarms.cntDelay < nAlarms){
+*/  									if(pktAlarms.cntDelay < nAlarms){
 										sumAlmDelay += uDelay;
 										NS_LOG_DEBUG("sumDely:" << sumAlmDelay);
 										pktAlarms.cntDelay++;	
@@ -442,6 +442,31 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
 	}
 }/* -----  end of function buildingHandler  ----- */
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  findSfMin
+ *  Description: find SF smallest frequent   
+ * =====================================================================================
+ */
+int32_t findSfMin ( int *vec ){
+	int32_t num = distance(vec, min_element(vec,vec+6));
+	
+	if (vec[1] == vec[0])
+		num = 1;
+	else if (vec[2] == vec[1])
+		num = 2; 
+	else if (vec[3] == vec[2])
+		num = 3; 
+	else if (vec[4] == vec[3])
+		num = 4; 
+	else if (vec[5] == vec[4])
+		num = 5; 
+	
+	//cout << "The index of smallest element is "  << num << endl;
+	
+	return(num);
+}		/* -----  end of function findSfMin  ----- */
+
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -466,7 +491,6 @@ int main (int argc, char *argv[]){
 	Time avgRegDelay = NanoSeconds(0);
 	Time avgAlmDelay = NanoSeconds(0);
 
-
   	CommandLine cmd;
    	cmd.AddValue ("nSeed", "Number of seed to position", nSeed);
   	cmd.AddValue ("nDevices", "Number of end devices to include in the simulation", nDevices);
@@ -480,26 +504,25 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("file2", "files containing result regular data", fileRegularMetric);
    	cmd.AddValue ("file3", "files containing result alarm information", fileAlarmData);
   	cmd.AddValue ("file4", "files containing result alarm data", fileAlarmMetric);
-  	cmd.AddValue ("file5", "files containing result data", fileDelay);
+  	//cmd.AddValue ("file5", "files containing result data", fileDelay);
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	//nAlarms	= 4;
-	//nRegulars = nDevices - nAlarms;
-	nRegulars = nDevices/1.05; 
-	nAlarms = nDevices - nRegulars;
+	nAlarms	= 16;
+	nRegulars = nDevices - nAlarms;
+	//nRegulars = nDevices/1.05; 
+	//nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
-	cout << "number regular event: " << nRegulars << "number alarm event: " << nAlarms << endl;
-	
+
 	endDevRegFile += to_string(trial) + "/endDevicesReg" + to_string(nRegulars) + ".dat";
 	endDevAlmFile += to_string(trial) + "/endDevicesAlm" + to_string(nAlarms) + ".dat";
 	gwFile += to_string(trial) + "/GWs" + to_string(gatewayRings) + ".dat";
-	
+  	
 	ofstream myfile;
-	myfile.open (fileDelay, ios::out | ios::app);
+/*  myfile.open (fileDelay, ios::out | ios::app);
 	myfile << nDevices << ":\n";
 	myfile.close();
-	
+*/	
   	// Set up logging
   	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
   	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
@@ -555,6 +578,17 @@ int main (int argc, char *argv[]){
             	                   "Y", DoubleValue (0.0));
   	mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
+  	MobilityHelper mobilityAlm;
+  	mobilityAlm.SetPositionAllocator ("ns3::GridPositionAllocator",
+    	                             "MinX", DoubleValue (-4500),
+        	                         "MinY", DoubleValue (-4500),
+            	                     "DeltaX", DoubleValue (3000.0),
+                	                 "DeltaY", DoubleValue (3000.0),
+                    	             "GridWidth", UintegerValue (4),
+                        	         "LayoutType", StringValue ("RowFirst"));
+	mobilityAlm.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+
+
   	/************************
   	*  Create the channel  *
   	************************/
@@ -604,7 +638,17 @@ int main (int argc, char *argv[]){
   	endDevices.Create (nDevices);
 
   	// Assign a mobility model to each node
-  	mobility.Install (endDevices);
+  	//mobility.Install (endDevices);
+	for (int j = 0; j < nRegulars; ++j){
+			Ptr<Node> node = endDevices.Get(j);
+			mobility.Install(node);
+	}
+  	
+	for (int j = nRegulars;	j < nDevices; ++j){
+    	Ptr<Node> node = endDevices.Get(j);
+		mobilityAlm.Install(node);
+	}
+
 	
   	// Create a LoraDeviceAddressGenerator
   	uint8_t nwkId = 54;
@@ -612,20 +656,29 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=4300.0, y=00.0;
-  	for (NodeContainer::Iterator j = endDevices.Begin ();
-    	j != endDevices.End (); ++j){
-      	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
+  	for (NodeContainer::Iterator j = endDevices.Begin (); 
+		j != endDevices.End (); ++j){
+    	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
-		//cout << "pos: " << position << endl; 
-		//position.x = x;
-		//position.y = y;
-		//x +=50;
-		//y +=50;
       	position.z = 1.2;
       	mobility->SetPosition (position);
 	}
-
+ /*  	
+	double angleAlm=0, sAngleAlm=3*M_PI/4;	
+  	int radiusAlm=100;
+  	// iterate our nodes and print their position.
+  	for (int j = nRegulars; j < nDevices; ++j){
+    	Ptr<Node> object = endDevices.Get(j);
+     	Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
+     	NS_ASSERT (position != 0);
+  		Vector pos = position->GetPosition ();
+		pos.x = radiusAlm * cos(angleAlm);
+ 		pos.y = radiusAlm * sin(angleAlm);
+	   	position->SetPosition (pos);
+		angleAlm += sAngleAlm;
+		radiusAlm += 100; 
+  	}	
+*/	
   	// Create the LoraNetDevices of the regular end devices
   	phyHelper.SetDeviceType (LoraPhyHelper::ED);
   	macHelper.SetDeviceType (LoraMacHelper::ED);
@@ -730,10 +783,40 @@ int main (int argc, char *argv[]){
   	NS_LOG_DEBUG ("Spreading factor");
 	// set spreading factor for regular event
   	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
-  	//macHelper.SetSpreadingFactorsUp (endDevices);
-/*  	uint8_t count=5;
-	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
-		Ptr<Node> object = *j;
+  	//macHelper.SetSpreadingFactorsUp (endDevices, nRegulars, nDevices);
+	/*  int sfMin[6] = {0,0,0,0,0,0};
+  	for(int j = 0; j < nDevices; j++){
+		Ptr<Node> object = endDevices.Get(j);
+    	Ptr<NetDevice> netDevice = object->GetDevice (0);
+      	Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
+      	NS_ASSERT (loraNetDevice != 0);
+      	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
+      	NS_ASSERT (mac != 0);
+		switch ( mac->GetDataRate() ){
+				case 0:
+						sfMin[0]++;
+						break;
+				case 1:	
+						sfMin[1]++;
+						break;
+				case 2:	
+						sfMin[2]++;
+						break;
+				case 3:	
+						sfMin[3]++;
+						break;
+				case 4:	
+						sfMin[4]++;
+						break;
+				default:	
+						sfMin[5]++;
+						break;
+		}//-----  end switch  ----- 
+	}
+
+	uint8_t count=findSfMin(sfMin);
+	for (int j = nRegulars; j < nDevices; ++j){
+		Ptr<Node> object = endDevices.Get(j);
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
       	Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
       	NS_ASSERT (loraNetDevice != 0);
@@ -742,8 +825,8 @@ int main (int argc, char *argv[]){
     	
 		mac->SetDataRate(count);
 		//count -=1;
-	}
-*/
+	}*/
+
 	/************************
   	* Create Network Server *
   	*************************/
@@ -841,24 +924,24 @@ int main (int argc, char *argv[]){
   	NS_LOG_DEBUG("avgDelay: " << avgRegDelay);
  
  	probSucc = probSucc * 100;
-  
+/*    
 	myfile.open (fileDelay, ios::out | ios::app);
 	myfile << "\n\n";
 	myfile.close();
-
-   	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
+*/
+/* 	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
    	cout << "  "  << nRegulars << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
-
+*/
   	myfile.open (fileRegularMetric, ios::out | ios::app);
-  	myfile << nRegulars << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+  	myfile << nRegulars << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen <<  ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
   
 
- 	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgRegDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+/* 	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgRegDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktRegulars.sent << " succ:" << pktRegulars.packSucc << " drop:"<< packLoss << " rec:" << pktRegulars.received << " interf:" << pktRegulars.interfered << " noMoreRec:" << pktRegulars.noMoreReceivers << " underSens:" << pktRegulars.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-
+*/
 
   	myfile.open (fileRegularData, ios::out | ios::app);
   	myfile << "sent: " << pktRegulars.sent << " succ: " << pktRegulars.packSucc << " drop: "<< packLoss << " rec: " << pktRegulars.received << " interf: " << pktRegulars.interfered << " noMoreRec: " << pktRegulars.noMoreReceivers << " underSens: " << pktRegulars.underSensitivity << "\n";
@@ -905,16 +988,16 @@ int main (int argc, char *argv[]){
    	cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
-  	myfile.open (fileAlarmMetric, ios::out | ios::app);
-  	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+ 	myfile.open (fileAlarmMetric, ios::out | ios::app);
+  	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
-  
-
+ 
+/* 
  	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgAlmDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktAlarms.sent << " succ:" << pktAlarms.packSucc << " drop:"<< packLoss << " rec:" << pktAlarms.received << " interf:" << pktAlarms.interfered << " noMoreRec:" << pktAlarms.noMoreReceivers << " underSens:" << pktAlarms.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-
+*/
 
   	myfile.open (fileAlarmData, ios::out | ios::app);
   	myfile << "sent: " << pktAlarms.sent << " succ: " << pktAlarms.packSucc << " drop: "<< packLoss << " rec: " << pktAlarms.received << " interf: " << pktAlarms.interfered << " noMoreRec: " << pktAlarms.noMoreReceivers << " underSens: " << pktAlarms.underSensitivity << "\n";

@@ -57,7 +57,7 @@ double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 600;
 int appPeriodSeconds = 600;
-string fileDelay = "./scratch/delay.dat";
+//string fileDelay = "./scratch/delay.dat";
 
 int noMoreReceivers = 0;
 int interfered = 0;
@@ -73,12 +73,12 @@ Time sumToA=Seconds(0);
 Time sumDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = false;
-bool buildingsEnabled = false;
+bool shadowingEnabled = true;
+bool buildingsEnabled = true;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = false;
+bool printBuildings = true;
 bool printDelay = true;
 time_t oldtime = time (0);
 
@@ -122,13 +122,14 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 								if (status.packFlag){
 									Time uDelay = (status.rcvTime - status.sndTime)-status.duration;
 									//NS_LOG_INFO("ToA:" << status.duration);
-									NS_LOG_INFO ("Delay for device " << uDelay);if(printDelay){
+									NS_LOG_INFO ("Delay for device " << uDelay);
+/*  									if(printDelay){
   											ofstream myfile;
   											myfile.open (fileDelay, ios::out | ios::app);
         									myfile << ", " << uDelay.GetNanoSeconds();
     										myfile.close();
 										}
-									if(cntDelay < nDevices){
+*/									if(cntDelay < nDevices){
 										sumDelay += uDelay;
 										NS_LOG_DEBUG("sumDely:" << sumDelay);
 										cntDelay++;
@@ -351,17 +352,17 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
   	cmd.AddValue ("file1", "files containing result information", fileData);
   	cmd.AddValue ("file2", "files containing result data", fileMetric);
-  	cmd.AddValue ("file3", "files containing result data", fileDelay);
+  	//cmd.AddValue ("file3", "files containing result data", fileDelay);
   	cmd.AddValue ("trial", "files containing result data", trial);
   	cmd.Parse (argc, argv);
 	
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 	
 	ofstream myfile;
-	myfile.open (fileDelay, ios::out | ios::app);
+/*  myfile.open (fileDelay, ios::out | ios::app);
 	myfile << nDevices << ":\n";
 	myfile.close();
-	
+*/	
   	// Set up logging
   	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
   	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
@@ -501,8 +502,8 @@ int main (int argc, char *argv[]){
 		Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       	phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionCallback));
-		Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-		mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+		//Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+		//mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   	/*********************
@@ -676,15 +677,15 @@ int main (int argc, char *argv[]){
  
  	probSucc = probSucc * 100;
   
-	myfile.open (fileDelay, ios::out | ios::app);
+/*	myfile.open (fileDelay, ios::out | ios::app);
 	myfile << "\n\n";
 	myfile.close();
-	
-   	//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
+*/	
+  	//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
    	//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
   	myfile.open (fileMetric, ios::out | ios::app);
-  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+  	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " <<  avgDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
   
 
