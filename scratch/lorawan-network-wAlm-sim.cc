@@ -984,10 +984,10 @@ int main (int argc, char *argv[]){
  
  	probSucc = probSucc * 100;
   
- 
+/*   
    	cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
-
+*/
  	myfile.open (fileAlarmMetric, ios::out | ios::app);
   	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
