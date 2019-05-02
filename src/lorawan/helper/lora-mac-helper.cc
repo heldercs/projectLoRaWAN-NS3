@@ -313,7 +313,7 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         {
           mac->SetDataRate (3);
         }
-      else if (rxPower > *(gwSensitivity+3))
+       else if (rxPower > *(gwSensitivity+3))
         {
           mac->SetDataRate (2);
         }
@@ -332,27 +332,27 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
     }
 }
   
-void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices){
+void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int min, int max){
   NS_LOG_FUNCTION_NOARGS ();
 
-	int sf=7, min=7, max=8;
+	int sf=10;//, min=7, max=8;
 	
-	RngSeedManager::SetSeed (endDevices.GetN());
+	//RngSeedManager::SetSeed (endDevices.GetN());
 
-	Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
-	uv->SetAttribute("Min", DoubleValue(min));	
-	uv->SetAttribute("Max", DoubleValue(max));	
+	//Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
+	//uv->SetAttribute("Min", DoubleValue(min));	
+	//uv->SetAttribute("Max", DoubleValue(max));	
 
-  for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
-      Ptr<Node> object = *j;
+  for (int j = min; j < max; ++j){
+      Ptr<Node> object = endDevices.Get(j);
       Ptr<NetDevice> netDevice = object->GetDevice (0);
       Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
       NS_ASSERT (loraNetDevice != 0);
       Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       NS_ASSERT (mac != 0);
 			
-			sf = uv->GetInteger();
-			NS_LOG_DEBUG("SF: " << sf);	
+	//		sf = uv->GetInteger();
+	//		NS_LOG_DEBUG("SF: " << sf);	
 			
 			switch (sf) {
 							 	case 7:

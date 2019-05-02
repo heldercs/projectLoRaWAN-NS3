@@ -37,7 +37,7 @@ RandomSenderHelper::RandomSenderHelper (){
                    ("ns3::ParetoRandomVariable[Bound=10|Shape=2.5]"));
 
 	m_initialDelay = CreateObject<ExponentialRandomVariable> ();
-	m_initialDelay->SetAttribute ("Mean", DoubleValue (3600));
+	m_initialDelay->SetAttribute ("Mean", DoubleValue (600));
 }
 
 RandomSenderHelper::~RandomSenderHelper (){

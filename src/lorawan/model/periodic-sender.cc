@@ -99,7 +99,7 @@ PeriodicSender::SendPacket (void)
     }
   else
     {
-      packet = Create<Packet>(10);
+      packet = Create<Packet>(19);
     }
   
 	m_mac->Send (packet);

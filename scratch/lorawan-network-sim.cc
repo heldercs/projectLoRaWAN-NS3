@@ -73,13 +73,13 @@ Time sumToA=Seconds(0);
 Time sumDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = true;
-bool buildingsEnabled = true;
+bool shadowingEnabled = false;
+bool buildingsEnabled = false;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = true;
-bool printDelay = true;
+bool printBuildings = false;
+//bool printDelay = false;
 time_t oldtime = time (0);
 
 /**********************
@@ -400,9 +400,9 @@ int main (int argc, char *argv[]){
   	RngSeedManager::SetRun(nSeed);
   	
 	// Compute the number of gateways
-  	nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
-  	//nGateways = gatewayRings;
-  	sAngle = (2*M_PI)/(nGateways-1);
+  	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
+  	nGateways = gatewayRings;
+  	sAngle = (2*M_PI)/(nGateways);
   
 	// Create the time value from the period
   	Time appPeriod = Seconds (appPeriodSeconds);
@@ -520,7 +520,7 @@ int main (int argc, char *argv[]){
   	mobility.Install (gateways);
 
   	// Make it so that nodes are at a certain height > 0
-  	for (NodeContainer::Iterator j = gateways.Begin ()+1;
+  	for (NodeContainer::Iterator j = gateways.Begin ();
     	j != gateways.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
@@ -635,7 +635,7 @@ int main (int argc, char *argv[]){
   	if (printEDs){
     	PrintEndDevices (endDevices, gateways,
         	               endDevFile);
-		PrintSimulationTime ( );
+	//	PrintSimulationTime ( );
  	}
 
   	/****************

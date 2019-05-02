@@ -508,11 +508,12 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	nAlarms	= 16;
-	nRegulars = nDevices - nAlarms;
-	//nRegulars = nDevices/1.05; 
+	nRegulars = 1000;
+	nAlarms = nDevices - nRegulars;
+	//nRegulars = nDevices/(1.01); 
 	//nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
+
 
 	endDevRegFile += to_string(trial) + "/endDevicesReg" + to_string(nRegulars) + ".dat";
 	endDevAlmFile += to_string(trial) + "/endDevicesAlm" + to_string(nAlarms) + ".dat";
@@ -562,9 +563,9 @@ int main (int argc, char *argv[]){
   	RngSeedManager::SetRun(nSeed);
   	
 	// Compute the number of gateways
-  	nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
-  	//nGateways = gatewayRings;
-  	sAngle = (2*M_PI)/(nGateways-1);
+  	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
+  	nGateways = gatewayRings;
+  	sAngle = (2*M_PI)/(nGateways);
 
  
 	// Create the time value from the period
@@ -578,7 +579,7 @@ int main (int argc, char *argv[]){
             	                   "Y", DoubleValue (0.0));
   	mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
-  	MobilityHelper mobilityAlm;
+  	/*  MobilityHelper mobilityAlm;
   	mobilityAlm.SetPositionAllocator ("ns3::GridPositionAllocator",
     	                             "MinX", DoubleValue (-4500),
         	                         "MinY", DoubleValue (-4500),
@@ -587,7 +588,7 @@ int main (int argc, char *argv[]){
                     	             "GridWidth", UintegerValue (4),
                         	         "LayoutType", StringValue ("RowFirst"));
 	mobilityAlm.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-
+*/
 
   	/************************
   	*  Create the channel  *
@@ -638,8 +639,8 @@ int main (int argc, char *argv[]){
   	endDevices.Create (nDevices);
 
   	// Assign a mobility model to each node
-  	//mobility.Install (endDevices);
-	for (int j = 0; j < nRegulars; ++j){
+  	mobility.Install (endDevices);
+	/*  for (int j = 0; j < nRegulars; ++j){
 			Ptr<Node> node = endDevices.Get(j);
 			mobility.Install(node);
 	}
@@ -647,7 +648,7 @@ int main (int argc, char *argv[]){
 	for (int j = nRegulars;	j < nDevices; ++j){
     	Ptr<Node> node = endDevices.Get(j);
 		mobilityAlm.Install(node);
-	}
+	}*/
 
 	
   	// Create a LoraDeviceAddressGenerator
@@ -663,9 +664,10 @@ int main (int argc, char *argv[]){
       	position.z = 1.2;
       	mobility->SetPosition (position);
 	}
- /*  	
-	double angleAlm=0, sAngleAlm=3*M_PI/4;	
-  	int radiusAlm=100;
+  	
+	//double angleAlm=0, sAngleAlm=2*M_PI/nAlarms;	
+  	/*  double angleAlm=0, sAngleAlm=3*M_PI/4;	
+  	int radiusAlm=200;
   	// iterate our nodes and print their position.
   	for (int j = nRegulars; j < nDevices; ++j){
     	Ptr<Node> object = endDevices.Get(j);
@@ -676,9 +678,9 @@ int main (int argc, char *argv[]){
  		pos.y = radiusAlm * sin(angleAlm);
 	   	position->SetPosition (pos);
 		angleAlm += sAngleAlm;
-		radiusAlm += 100; 
-  	}	
-*/	
+		radiusAlm += 300; 
+  	}*/
+	
   	// Create the LoraNetDevices of the regular end devices
   	phyHelper.SetDeviceType (LoraPhyHelper::ED);
   	macHelper.SetDeviceType (LoraMacHelper::ED);
@@ -723,7 +725,7 @@ int main (int argc, char *argv[]){
   	mobility.Install (gateways);
 
   	// Make it so that nodes are at a certain height > 0
-  	for (NodeContainer::Iterator j = gateways.Begin ()+1;
+  	for (NodeContainer::Iterator j = gateways.Begin ();
     	j != gateways.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
@@ -813,8 +815,8 @@ int main (int argc, char *argv[]){
 						break;
 		}//-----  end switch  ----- 
 	}
-
-	uint8_t count=findSfMin(sfMin);
+*/
+	uint8_t count=0;
 	for (int j = nRegulars; j < nDevices; ++j){
 		Ptr<Node> object = endDevices.Get(j);
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -822,10 +824,12 @@ int main (int argc, char *argv[]){
       	NS_ASSERT (loraNetDevice != 0);
       	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       	NS_ASSERT (mac != 0);
-    	
+    	count = mac->GetDataRate();
+		if (count)
+			count -=2;	
 		mac->SetDataRate(count);
 		//count -=1;
-	}*/
+	}
 
 	/************************
   	* Create Network Server *
@@ -878,7 +882,7 @@ int main (int argc, char *argv[]){
    	*********************/
     if (printEDs){
     	PrintEndDevices (endDevices, gateways, endDevRegFile, endDevAlmFile, gwFile);
-		PrintSimulationTime ( );
+		//PrintSimulationTime ( );
  	}
 
   	/****************
@@ -929,20 +933,20 @@ int main (int argc, char *argv[]){
 	myfile << "\n\n";
 	myfile.close();
 */
-/* 	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
+/*  	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (NanoSec)" << ", " << "G" << ", " << "S" << endl; 
    	cout << "  "  << nRegulars << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 */
   	myfile.open (fileRegularMetric, ios::out | ios::app);
   	myfile << nRegulars << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen <<  ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
   
-
-/* 	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgRegDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+/* 
+ 	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgRegDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktRegulars.sent << " succ:" << pktRegulars.packSucc << " drop:"<< packLoss << " rec:" << pktRegulars.received << " interf:" << pktRegulars.interfered << " noMoreRec:" << pktRegulars.noMoreReceivers << " underSens:" << pktRegulars.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-*/
 
+*/
   	myfile.open (fileRegularData, ios::out | ios::app);
   	myfile << "sent: " << pktRegulars.sent << " succ: " << pktRegulars.packSucc << " drop: "<< packLoss << " rec: " << pktRegulars.received << " interf: " << pktRegulars.interfered << " noMoreRec: " << pktRegulars.noMoreReceivers << " underSens: " << pktRegulars.underSensitivity << "\n";
   	myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
@@ -961,7 +965,7 @@ int main (int argc, char *argv[]){
  	throughput = 0;
   	packLoss = pktAlarms.sent - pktAlarms.packSucc;
   	totalPacketsThrough = pktAlarms.packSucc;
-  	throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+  	throughput = totalPacketsThrough * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
  	NS_LOG_DEBUG("sumT: " << sumAlmToA.GetSeconds() << " int: " << appPeriodSeconds );
   	
@@ -992,7 +996,7 @@ int main (int argc, char *argv[]){
   	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
   	myfile.close();  
  
-/* 
+/*  
  	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgAlmDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktAlarms.sent << " succ:" << pktAlarms.packSucc << " drop:"<< packLoss << " rec:" << pktAlarms.received << " interf:" << pktAlarms.interfered << " noMoreRec:" << pktAlarms.noMoreReceivers << " underSens:" << pktAlarms.underSensitivity << endl;
