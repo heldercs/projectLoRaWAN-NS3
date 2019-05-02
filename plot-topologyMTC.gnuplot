@@ -2,7 +2,8 @@
 reset
 
 # Set terminal up
-set term pngcairo font "FreeSans, 10" size 1024, 768
+#set term pngcairo font "FreeSans, 10" size 1024, 768
+set term postscript eps color blacktext "FreeSans-Bold" 10
 set output outFile
 
 set style line 3 lc rgb 'black' pt 9 ps 2
@@ -21,7 +22,7 @@ set palette defined (0.0 "#D53E4F",\
  4.5001 "#ABDDA4",\
  5.0 "#ABDDA4")
 
-set cblab 'Spreading Factor' font "freeSans,16"
+set cblab 'Spreading Factor' font "freeSans-Bold,16"
 
 # Set up style for buildings
 set style rect fc lt -1 fs solid 0.15 noborder
