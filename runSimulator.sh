@@ -62,7 +62,7 @@ then
 #	file3="./TestResult/test$trial/delay.dat"
 #	echo "number STA: delay (in nanoseconds) " >> ./TestResult/test$trial/delay.dat
 
-	for numSta in 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000 
+	for numSta in 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000 
 	do
 			echo "trial:$trial-numSTA:$numSta"
 
