@@ -124,7 +124,8 @@ EndDeviceLoraMac::~EndDeviceLoraMac ()
 void
 EndDeviceLoraMac::Send (Ptr<Packet> packet)
 {
-  NS_LOG_FUNCTION (this << packet);
+  	NS_LOG_FUNCTION (this << packet);
+	//std::cout<< "size: " << packet->GetSize() <<std::endl;
 	// Check that there are no scheduled receive windows.
   // We cannot send a packet if we are in the process of transmitting or waiting
   // for reception.

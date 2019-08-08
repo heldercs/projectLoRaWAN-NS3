@@ -86,28 +86,32 @@ PeriodicSender::SetInitialDelay (Time delay)
 }
 
 void
-PeriodicSender::SendPacket (void)
-{
-  NS_LOG_FUNCTION (this);
+PeriodicSender::SendPacket (void){
+  	NS_LOG_FUNCTION (this);
 
-  // Create and send a new packet
-  int size = m_pktSize->GetInteger ();
-  Ptr<Packet> packet;
-  if (m_randomPktSize == true)
-    {
-      packet = Create<Packet>(10+size);
-    }
-  else
-    {
-      packet = Create<Packet>(19);
-    }
+  	// Create and send a new packet
+ 	int size = m_pktSize->GetInteger ();
+  	Ptr<Packet> packet;
+  	if (m_randomPktSize == true){
+    	packet = Create<Packet>(10+size);
+  	}else{
+		// Assumes there's only one device
+      	//Ptr<LoraNetDevice> loraNetDevice = m_node->GetDevice (0)->GetObject<LoraNetDevice> ();
+        //Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
+    	//int sf = int(mac->GetSfFromDataRate(mac->GetDataRate ()));
+		//std::cout << "sf: " << sf << std::endl;
+		//if (sf == 7)
+     		packet = Create<Packet>(19);
+		//else
+		//	packet = Create<Packet>(5);
+   	}
   
 	m_mac->Send (packet);
-  // Schedule the next SendPacket event
-  m_sendEvent = Simulator::Schedule (m_interval, &PeriodicSender::SendPacket,
+  	// Schedule the next SendPacket event
+  	m_sendEvent = Simulator::Schedule (m_interval, &PeriodicSender::SendPacket,
                                      this);
 
-  NS_LOG_DEBUG ("Sent a packet of size " << packet->GetSize ());
+  	NS_LOG_DEBUG ("Sent a packet of size " << packet->GetSize ());
 }
 
 void

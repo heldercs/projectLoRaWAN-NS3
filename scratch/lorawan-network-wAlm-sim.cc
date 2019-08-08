@@ -467,6 +467,161 @@ int32_t findSfMin ( int *vec ){
 	return(num);
 }		/* -----  end of function findSfMin  ----- */
 
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  starEdge
+ *  Description: Alarms topology in start 
+ * =====================================================================================
+ */
+void starEdge ( NodeContainer endDevices ){	
+    double angleAlm=0, sAngleAlm=M_PI/2;
+    int radiusAlm;
+    
+	if(nAlarms < 15)
+        radiusAlm=5500; // openField 5500; bigPlant 1400
+    else
+        radiusAlm=1800;
+    uint8_t op=nAlarms%4, count=4, count2=2;
+    //double angleAlm=0, sAngleAlm=3*M_PI/4;    
+    //int radiusAlm=200;
+    //iterate our nodes and print their position.
+    for (int j = nRegulars; j < nDevices; ++j){
+        Ptr<Node> object = endDevices.Get(j);
+        Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
+        NS_ASSERT (position != 0);
+        Vector pos = position->GetPosition ();
+        switch (op) {
+                case 0:
+                        pos.x = radiusAlm * cos(angleAlm);
+                        pos.y = radiusAlm * sin(angleAlm);
+                        if(count==1){
+                            if(nAlarms < 15)
+                                radiusAlm -= 1000; // openField 1000; bigPlant 500
+                            else if (nAlarms < 20)
+								radiusAlm += 1500;
+							else
+                                radiusAlm += 1000;
+                            angleAlm += M_PI/4;
+                            count=5;
+                        }
+                        count--;
+                        break;
+                case 1:
+                        pos.x = 0;
+                        pos.y = 0;
+                        op = 0;
+                        break;
+                case 2:
+						if (nAlarms < 15){
+			       			pos.x = 2000 * cos(angleAlm); // opendFiled 2000; bigPlant 250
+                        	pos.y = 2000 * sin(angleAlm);
+						}else{
+                        	pos.x = 800 * cos(angleAlm);
+                        	pos.y = 800 * sin(angleAlm);
+						}
+                        
+						if(count2==2){
+                            sAngleAlm = M_PI;
+                        }else{
+                            angleAlm = 0;
+                            sAngleAlm = M_PI/2;
+                            op = 0;
+                        }
+                        count2--;
+                        break;
+                case 3:
+    					if (nAlarms < 15){
+			       			pos.x = 2000 * cos(angleAlm); //openField 2000; bigPlant 500
+                        	pos.y = 2000 * sin(angleAlm);
+						}else{
+                        	pos.x = 800 * cos(angleAlm);
+                        	pos.y = 800 * sin(angleAlm);
+						}
+                        
+						if(count2==2){
+                            sAngleAlm = M_PI;
+                        }else{
+                            angleAlm = 0;
+                            sAngleAlm = M_PI/2;
+                            op = 1;
+                        }
+                        count2--;
+                        break;
+                default:
+                        break;
+        }// -----  end switch  ----- 
+        position->SetPosition (pos);
+        angleAlm += sAngleAlm;
+        //radiusAlm -= 1000;
+    }	
+}		/* -----  end of function startEdge  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  orbitEdge
+ *  Description:  Alarms topology in orbit
+ * =====================================================================================
+ */
+void orbitEdge ( NodeContainer endDevices ){
+    double angleAlm=0, sAngleAlm=3*M_PI/4;
+    int radiusAlm=800; // openField 800; bigPlant 200
+    
+    // iterate our nodes and print their position.
+    for (int j = nRegulars; j < nDevices; ++j){
+        Ptr<Node> object = endDevices.Get(j);
+        Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
+        NS_ASSERT (position != 0);
+        Vector pos = position->GetPosition ();
+        pos.x = radiusAlm * cos(angleAlm);
+        pos.y = radiusAlm * sin(angleAlm);
+        position->SetPosition (pos);
+        angleAlm += sAngleAlm;
+		if (nAlarms >= 19)
+			radiusAlm += 280;
+		else if (nAlarms >= 17)
+			radiusAlm += 300;
+        else if (nAlarms >= 15)
+            radiusAlm += 350;
+        else if (nAlarms >= 13)
+            radiusAlm += 400;
+		else if (nAlarms >= 11)
+			radiusAlm += 500; 
+        else if (nAlarms >= 9)  // openField 600; bigPlant 150
+            radiusAlm += 600;
+        else if (nAlarms >= 7)
+            radiusAlm += 750;
+        else
+            radiusAlm += 900; 
+    }	
+}		/* -----  end of function orbitEdge  ----- */
+
+
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  circleEdge
+ *  Description: Aalrm topology in circle 
+ * =====================================================================================
+ */
+void circleEdge ( NodeContainer endDevices ){
+	double angleAlm=0, sAngleAlm=2*M_PI/nAlarms;	
+    //double angleAlm=0, sAngleAlm=3*M_PI/4;	
+  	int radiusAlm=300;
+  	
+	// iterate our nodes and print their position.
+  	for (int j = nRegulars; j < nDevices; ++j){
+    	Ptr<Node> object = endDevices.Get(j);
+     	Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
+     	NS_ASSERT (position != 0);
+  		Vector pos = position->GetPosition ();
+		pos.x = radiusAlm * cos(angleAlm);
+ 		pos.y = radiusAlm * sin(angleAlm);
+	   	position->SetPosition (pos);
+		angleAlm += sAngleAlm;
+		//radiusAlm += 300; 
+  	}
+}/* -----  end of function circleEdge  ----- */
+
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -487,7 +642,7 @@ int main (int argc, char *argv[]){
 	int trial=1, packLoss=0;
   	uint32_t nSeed=1;
 	double angle=0, sAngle=0;
-	float G=0, S=0;
+	//float G=0, S=0;
 	Time avgRegDelay = NanoSeconds(0);
 	Time avgAlmDelay = NanoSeconds(0);
 
@@ -508,10 +663,10 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	nRegulars = 1000;
+	//nAlarms = 10;
+	//nRegulars = nDevices - nAlarms;
+	nRegulars = nDevices/(1.01); 
 	nAlarms = nDevices - nRegulars;
-	//nRegulars = nDevices/(1.01); 
-	//nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
 
 
@@ -565,7 +720,7 @@ int main (int argc, char *argv[]){
 	// Compute the number of gateways
   	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
   	nGateways = gatewayRings;
-  	sAngle = (2*M_PI)/(nGateways);
+  	sAngle = M_PI; //(2*M_PI)/(nGateways);
 
  
 	// Create the time value from the period
@@ -665,22 +820,15 @@ int main (int argc, char *argv[]){
       	mobility->SetPosition (position);
 	}
   	
-	//double angleAlm=0, sAngleAlm=2*M_PI/nAlarms;	
-  	/*  double angleAlm=0, sAngleAlm=3*M_PI/4;	
-  	int radiusAlm=200;
-  	// iterate our nodes and print their position.
-  	for (int j = nRegulars; j < nDevices; ++j){
-    	Ptr<Node> object = endDevices.Get(j);
-     	Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
-     	NS_ASSERT (position != 0);
-  		Vector pos = position->GetPosition ();
-		pos.x = radiusAlm * cos(angleAlm);
- 		pos.y = radiusAlm * sin(angleAlm);
-	   	position->SetPosition (pos);
-		angleAlm += sAngleAlm;
-		radiusAlm += 300; 
-  	}*/
-	
+	/* circle edges */
+	//circleEdge(endDevices);
+
+	/* start edges */
+	//starEdge(endDevices);
+
+	/* orbits edges */	
+	orbitEdge(endDevices);		
+
   	// Create the LoraNetDevices of the regular end devices
   	phyHelper.SetDeviceType (LoraPhyHelper::ED);
   	macHelper.SetDeviceType (LoraMacHelper::ED);
@@ -814,9 +962,9 @@ int main (int argc, char *argv[]){
 						sfMin[5]++;
 						break;
 		}//-----  end switch  ----- 
-	}
-*/
-	uint8_t count=0;
+	}*/
+
+	uint8_t count = 2;
 	for (int j = nRegulars; j < nDevices; ++j){
 		Ptr<Node> object = endDevices.Get(j);
     	Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -824,9 +972,9 @@ int main (int argc, char *argv[]){
       	NS_ASSERT (loraNetDevice != 0);
       	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       	NS_ASSERT (mac != 0);
-    	count = mac->GetDataRate();
-		if (count)
-			count -=2;	
+    	//count = mac->GetDataRate();
+		//if (count)
+		//	count -=1;
 		mac->SetDataRate(count);
 		//count -=1;
 	}
@@ -911,7 +1059,7 @@ int main (int argc, char *argv[]){
  	NS_LOG_DEBUG("sumT: " << sumRegToA.GetSeconds() << " int: " << appPeriodSeconds );
   	
 	//normalized offered traffic	
-	G =  (double)sumRegToA.GetSeconds()/appPeriodSeconds;
+	//G =  (double)sumRegToA.GetSeconds()/appPeriodSeconds;
 
   	double probSucc = (double(pktRegulars.packSucc)/pktRegulars.sent);
   	double probLoss = (double(packLoss)/pktRegulars.sent)*100;
@@ -920,12 +1068,12 @@ int main (int argc, char *argv[]){
 	double probUSen = (double(pktRegulars.underSensitivity)/pktRegulars.sent)*100;
 
 	//normalized throughput
-  	S = G*probSucc;  
+  	//S = G*probSucc;  
 	
-	NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
+	//NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
 	
-	avgRegDelay = sumRegDelay/nRegulars;
-  	NS_LOG_DEBUG("avgDelay: " << avgRegDelay);
+	//avgRegDelay = sumRegDelay/nRegulars;
+  	//NS_LOG_DEBUG("avgDelay: " << avgRegDelay);
  
  	probSucc = probSucc * 100;
 /*    
@@ -937,7 +1085,7 @@ int main (int argc, char *argv[]){
    	cout << "  "  << nRegulars << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 */
   	myfile.open (fileRegularMetric, ios::out | ios::app);
-  	myfile << nRegulars << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen <<  ", " << avgRegDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+  	myfile << nRegulars << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << "\n";
   	myfile.close();  
   
 /* 
@@ -970,7 +1118,7 @@ int main (int argc, char *argv[]){
  	NS_LOG_DEBUG("sumT: " << sumAlmToA.GetSeconds() << " int: " << appPeriodSeconds );
   	
 	//normalized offered traffic	
-	G =  (double)sumAlmToA.GetSeconds()/appPeriodSeconds;
+	//G =  (double)sumAlmToA.GetSeconds()/appPeriodSeconds;
 
   	probSucc = (double(pktAlarms.packSucc)/pktAlarms.sent);
   	probLoss = (double(packLoss)/pktAlarms.sent)*100;
@@ -979,12 +1127,12 @@ int main (int argc, char *argv[]){
 	probUSen = (double(pktAlarms.underSensitivity)/pktAlarms.sent)*100;
 
 	//normalized throughput
-  	S = G*probSucc;  
+  	//S = G*probSucc;  
 	
-	NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
+	//NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
 	
-	avgAlmDelay = sumRegDelay/nAlarms;
-  	NS_LOG_DEBUG("avgDelay: " << avgAlmDelay);
+	//avgAlmDelay = sumRegDelay/nAlarms;
+  	//NS_LOG_DEBUG("avgDelay: " << avgAlmDelay);
  
  	probSucc = probSucc * 100;
   
@@ -993,7 +1141,7 @@ int main (int argc, char *argv[]){
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 */
  	myfile.open (fileAlarmMetric, ios::out | ios::app);
-  	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay.GetNanoSeconds() << ", " << G << ", " << S << "\n";
+  	myfile << nAlarms << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << "\n";
   	myfile.close();  
  
 /*  
