@@ -445,7 +445,9 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
  */
 int main (int argc, char *argv[]){
 
- 	string fileMetric="./scratch/mac-sta-inf.txt";
+ 	string fileMetric="./TestResult/test";
+  	string fileMetric8="./TestResult/test";
+  	string fileMetric9="./TestResult/test";
   	string fileData="./scratch/mac-sta-dat.dat";
  	string pcapfile="./scratch/mac-s1g-slots";
 	string endDevFile="./TestResult/test";
@@ -454,6 +456,8 @@ int main (int argc, char *argv[]){
 	double angle=0, sAngle=0;
 	//float G=0, S=0;
 	Time avgDelay = NanoSeconds(0);
+	double throughput, probSucc, probLoss, probInte, probNoMo, probUSen;
+	uint8_t totalPacketsThrough;
 
   	CommandLine cmd;
    	cmd.AddValue ("nSeed", "Number of seed to position", nSeed);
@@ -464,13 +468,25 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   	cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   	cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
-  	cmd.AddValue ("file1", "files containing result information", fileData);
-  	cmd.AddValue ("file2", "files containing result data", fileMetric);
+  	//cmd.AddValue ("file1", "files containing result information", fileData);
+  	//cmd.AddValue ("file2", "files containing result data", fileMetric);
   	//cmd.AddValue ("file3", "files containing result data", fileDelay);
   	cmd.AddValue ("trial", "files containing result data", trial);
   	cmd.Parse (argc, argv);
 	
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
+
+	if (radius == 4900){
+		fileMetric += to_string(trial) + "/traffic-600/result-STAs-SF7.dat";
+		fileMetric8 += to_string(trial) + "/traffic-600/result-STAs-SF8.dat";
+	}
+
+	if (radius == 5600){
+		fileMetric += to_string(trial) + "/traffic-600/result-STAs-SF7.dat";
+		fileMetric8 += to_string(trial) + "/traffic-600/result-STAs-SF8.dat";
+		fileMetric9 += to_string(trial) + "/traffic-600/result-STAs-SF9.dat";
+		
+	}
 	
 	ofstream myfile;
 /*  myfile.open (fileDelay, ios::out | ios::app);
@@ -763,49 +779,51 @@ int main (int argc, char *argv[]){
   	Simulator::Run ();
   	Simulator::Destroy ();
 
-  	/***************
-  	*  Results sf7 *
-  	***************/
-  	double throughput = 0;
-  	packLoss = sentSf7 - packSuccSf7;
-  	uint32_t totalPacketsThrough = packSuccSf7;
-  	throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+	if (nDevicesSf7){
+		/***************
+		*  Results sf7 *
+		***************/
+		throughput = 0;
+		packLoss = sentSf7 - packSuccSf7;
+		totalPacketsThrough = packSuccSf7;
+		throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
-  	double probSucc = (double(packSuccSf7)/sentSf7);
-  	double probLoss = (double(packLoss)/sentSf7)*100;
-	double probInte = (double(interferedSf7)/sentSf7)*100;
-	double probNoMo = (double(noMoreReceiversSf7)/sentSf7)*100;
-	double probUSen = (double(underSensitivitySf7)/sentSf7)*100;
+		probSucc = (double(packSuccSf7)/sentSf7);
+		probLoss = (double(packLoss)/sentSf7)*100;
+		probInte = (double(interferedSf7)/sentSf7)*100;
+		probNoMo = (double(noMoreReceiversSf7)/sentSf7)*100;
+		probUSen = (double(underSensitivitySf7)/sentSf7)*100;
 
- 	probSucc = probSucc * 100;
+		probSucc = probSucc * 100;
+	
+	/*	myfile.open (fileDelay, ios::out | ios::app);
+		myfile << "\n\n";
+		myfile.close();
+	*/	
+  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
+   		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
+
+	  	myfile.open (fileMetric, ios::out | ios::app);
+  		myfile << "SF7 ," << nDevicesSf7 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
+  		myfile.close();  
   
-/*	myfile.open (fileDelay, ios::out | ios::app);
-	myfile << "\n\n";
-	myfile.close();
-*/	
-  	//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
-   	//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
-  	myfile.open (fileMetric, ios::out | ios::app);
-  	myfile << "SF7 ," << nDevicesSf7 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
-  	myfile.close();  
-  
-
- 	//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
-  	//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  	//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
-  	//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+ 		//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+  		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+  		//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  	myfile.open (fileData, ios::out | ios::app);
-  	myfile << "sent: " << sentSf7 << " succ: " << packSuccSf7 << " drop: "<< packLoss << " rec: " << receivedSf7 << " interf: " << interferedSf7 << " noMoreRec: " << noMoreReceiversSf7 << " underSens: " << underSensitivitySf7 << "\n";
-  	myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  	myfile << "numDevSf7: " << nDevicesSf7 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  	myfile << "#######################################################################" << "\n\n";
-  	myfile.close();  
+  		//myfile.open (fileData, ios::out | ios::app);
+  		//myfile << "sent: " << sentSf7 << " succ: " << packSuccSf7 << " drop: "<< packLoss << " rec: " << receivedSf7 << " interf: " << interferedSf7 << " noMoreRec: " << noMoreReceiversSf7 << " underSens: " << underSensitivitySf7 << "\n";
+  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		//myfile << "numDevSf7: " << nDevicesSf7 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		//myfile << "#######################################################################" << "\n\n";
+  		//myfile.close();  
 
 
-
+	}
+	
 	if(nDevicesSf8){
 		/***************
   		*  Results sf8 *
@@ -822,7 +840,7 @@ int main (int argc, char *argv[]){
 		probUSen = (double(underSensitivitySf8)/sentSf8)*100;
 
  		probSucc = probSucc * 100;
-  
+
 		/*	myfile.open (fileDelay, ios::out | ios::app);
 		myfile << "\n\n";
 		myfile.close();
@@ -830,7 +848,7 @@ int main (int argc, char *argv[]){
   		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
    		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
-  		myfile.open (fileMetric, ios::out | ios::app);
+  		myfile.open (fileMetric8, ios::out | ios::app);
   		myfile << "SF8 ," << nDevicesSf8 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
   		myfile.close();  
   
@@ -841,15 +859,15 @@ int main (int argc, char *argv[]){
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  		myfile.open (fileData, ios::out | ios::app);
-  		myfile << "sent: " << sentSf8 << " succ: " << packSuccSf8 << " drop: "<< packLoss << " rec: " << receivedSf8 << " interf: " << interferedSf8 << " noMoreRec: " << noMoreReceiversSf8 << " underSens: " << underSensitivitySf8 << "\n";
-  		myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  		myfile << "numDevSf8: " << nDevicesSf8 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  		myfile << "#######################################################################" << "\n\n";
-  		myfile.close();  
+  		//myfile.open (fileData, ios::out | ios::app);
+  		//myfile << "sent: " << sentSf8 << " succ: " << packSuccSf8 << " drop: "<< packLoss << " rec: " << receivedSf8 << " interf: " << interferedSf8 << " noMoreRec: " << noMoreReceiversSf8 << " underSens: " << underSensitivitySf8 << "\n";
+  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		//myfile << "numDevSf8: " << nDevicesSf8 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		//myfile << "#######################################################################" << "\n\n";
+  		//myfile.close();  
  	
 	}
-
+	
 	if(nDevicesSf9){
 		/***************
   		*  Results sf9 *
@@ -874,7 +892,7 @@ int main (int argc, char *argv[]){
   		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
    		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
 
-  		myfile.open (fileMetric, ios::out | ios::app);
+  		myfile.open (fileMetric9, ios::out | ios::app);
   		myfile << "SF9," << nDevicesSf9 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
   		myfile.close();  
   
@@ -885,12 +903,12 @@ int main (int argc, char *argv[]){
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  		myfile.open (fileData, ios::out | ios::app);
-  		myfile << "sent: " << sentSf9 << " succ: " << packSuccSf9 << " drop: "<< packLoss << " rec: " << receivedSf9 << " interf: " << interferedSf9 << " noMoreRec: " << noMoreReceiversSf9 << " underSens: " << underSensitivitySf9 << "\n";
-  		myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  		myfile << "numDevSf9: " << nDevicesSf9 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  		myfile << "#######################################################################" << "\n\n";
-  		myfile.close();  
+  		//myfile.open (fileData, ios::out | ios::app);
+  		//myfile << "sent: " << sentSf9 << " succ: " << packSuccSf9 << " drop: "<< packLoss << " rec: " << receivedSf9 << " interf: " << interferedSf9 << " noMoreRec: " << noMoreReceiversSf9 << " underSens: " << underSensitivitySf9 << "\n";
+  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		//myfile << "numDevSf9: " << nDevicesSf9 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		//myfile << "#######################################################################" << "\n\n";
+  		//myfile.close();  
  	
 	}
 

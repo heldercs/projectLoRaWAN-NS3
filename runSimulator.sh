@@ -54,9 +54,10 @@ then
 	touch ./TestResult/test$trial/traffic-$interval/mac-STAs-GW-$gwRing.txt
 	file1="./TestResult/test$trial/traffic-$interval/mac-STAs-GW-$gwRing.txt"
 
-	touch ./TestResult/test$trial/traffic-$interval/result-STAs.dat
-	file2="./TestResult/test$trial/traffic-$interval/result-STAs.dat"
-	echo "#numSta, Throughput(Kbps), ProbSucc(%), ProbLoss(%), ProbInter(%), ProbNoMo(%), ProbUSen(%)" > ./TestResult/test$trial/traffic-$interval/result-STAs.dat 
+	touch ./TestResult/test$trial/traffic-$interval/result-STAs-SF7.dat
+	touch ./TestResult/test$trial/traffic-$interval/result-STAs-SF8.dat
+	file2="./TestResult/test$trial/traffic-$interval/result-STAs"
+	echo "#numSta, Throughput(Kbps), ProbSucc(%), ProbLoss(%), ProbInter(%), ProbNoMo(%), ProbUSen(%)" > ./TestResult/test$trial/traffic-$interval/result-STAs 
 		
 #	touch ./TestResult/test$trial/delay.dat
 #	file3="./TestResult/test$trial/delay.dat"
@@ -77,7 +78,7 @@ then
 
 		for numSeed in {1..5}
 		do
-  			./waf --run "lorawan-network-sim --nSeed=$numSeed --nDevices=$numSta --gatewayRings=$gwRing --radius=$rad --gatewayRadius=$gwRad --simulationTime=$simTime --appPeriod=$interval --printEDs=$pEDs --file1=$file1 --file2=$file2 --trial=$trial"  > ./TestResult/test$trial/traffic-$interval/pcap-sta-$numSta/record-$numSta.txt 2>&1
+  			./waf --run "lorawan-network-class-sim --nSeed=$numSeed --nDevices=$numSta --gatewayRings=$gwRing --radius=$rad --gatewayRadius=$gwRad --simulationTime=$simTime --appPeriod=$interval --printEDs=$pEDs --trial=$trial"  > ./TestResult/test$trial/traffic-$interval/pcap-sta-$numSta/record-$numSta.txt 2>&1
 		done
 	done
 	#done
@@ -121,6 +122,6 @@ else
 fi
 echo "##### Simulation finish #####"
 echo "seinding email..."
-echo simulation finish | mail -s Simulator helderhdw@gmail.com
+#echo simulation finish | mail -s Simulator helderhdw@gmail.com
 
 
