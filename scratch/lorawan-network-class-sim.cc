@@ -457,7 +457,6 @@ int main (int argc, char *argv[]){
 	//float G=0, S=0;
 	Time avgDelay = NanoSeconds(0);
 	double throughput, probSucc, probLoss, probInte, probNoMo, probUSen;
-	uint8_t totalPacketsThrough;
 
   	CommandLine cmd;
    	cmd.AddValue ("nSeed", "Number of seed to position", nSeed);
@@ -775,8 +774,10 @@ int main (int argc, char *argv[]){
 
   	Simulator::Stop (appStopTime + Hours(1));
 
-  	// PrintSimulationTime ();
+  	//PrintSimulationTime ();
+  	//oldtime = time (0) ;
   	Simulator::Run ();
+  	//cout << "Real time: " << std::time (0) - oldtime << " seconds" << endl;
   	Simulator::Destroy ();
 
 	if (nDevicesSf7){
@@ -785,8 +786,7 @@ int main (int argc, char *argv[]){
 		***************/
 		throughput = 0;
 		packLoss = sentSf7 - packSuccSf7;
-		totalPacketsThrough = packSuccSf7;
-		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf7 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
 		probSucc = (double(packSuccSf7)/sentSf7);
 		probLoss = (double(packLoss)/sentSf7)*100;
@@ -830,8 +830,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf8 - packSuccSf8;
-  		totalPacketsThrough = packSuccSf8;
-  		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf8 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf8)/sentSf8);
   		probLoss = (double(packLoss)/sentSf8)*100;
@@ -874,8 +873,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf9 - packSuccSf9;
-  		totalPacketsThrough = packSuccSf9;
-  		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf9 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf9)/sentSf9);
   		probLoss = (double(packLoss)/sentSf9)*100;
