@@ -313,10 +313,10 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         {
           mac->SetDataRate (3);
         }
-      /*else if (rxPower > *(gwSensitivity+3))
+      else if (rxPower > *(gwSensitivity+3))
         {
           mac->SetDataRate (2);
-        }*/
+        }
       else if (rxPower > *(gwSensitivity+4))
         {
           mac->SetDataRate (1);

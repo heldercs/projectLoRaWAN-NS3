@@ -477,14 +477,14 @@ int main (int argc, char *argv[]){
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 
 	if (radius == 4900){
-		fileMetric += to_string(trial) + "/traffic-600/result-STAs-SF7.dat";
-		fileMetric8 += to_string(trial) + "/traffic-600/result-STAs-SF8.dat";
+		fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
+		fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
 	}
 
 	if (radius == 5600){
-		fileMetric += to_string(trial) + "/traffic-600/result-STAs-SF7.dat";
-		fileMetric8 += to_string(trial) + "/traffic-600/result-STAs-SF8.dat";
-		fileMetric9 += to_string(trial) + "/traffic-600/result-STAs-SF9.dat";
+		fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
+		fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
+		fileMetric9 += to_string(trial) + "/traffic-10/result-STAs-SF9.dat";
 		
 	}
 	
@@ -602,7 +602,7 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=3000.0, y=0.0;
+  	//double x=5200.0, y=0.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
@@ -786,7 +786,7 @@ int main (int argc, char *argv[]){
 		throughput = 0;
 		packLoss = sentSf7 - packSuccSf7;
 		totalPacketsThrough = packSuccSf7;
-		throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
 		probSucc = (double(packSuccSf7)/sentSf7);
 		probLoss = (double(packLoss)/sentSf7)*100;
@@ -831,7 +831,7 @@ int main (int argc, char *argv[]){
   		throughput = 0;
   		packLoss = sentSf8 - packSuccSf8;
   		totalPacketsThrough = packSuccSf8;
-  		throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+  		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf8)/sentSf8);
   		probLoss = (double(packLoss)/sentSf8)*100;
@@ -875,7 +875,7 @@ int main (int argc, char *argv[]){
   		throughput = 0;
   		packLoss = sentSf9 - packSuccSf9;
   		totalPacketsThrough = packSuccSf9;
-  		throughput = totalPacketsThrough * 19 * 8 / ((simulationTime - appStartTime) * 1000.0);
+  		throughput = totalPacketsThrough * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf9)/sentSf9);
   		probLoss = (double(packLoss)/sentSf9)*100;
