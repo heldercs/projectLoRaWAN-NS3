@@ -1158,11 +1158,11 @@ int main (int argc, char *argv[]){
   	myfile.close();  
   
  
- 	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+/*  	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktRegulars.sent << " succ:" << pktRegulars.received << " drop:"<< packLoss << " rec:" << pktRegulars.received << " interf:" << pktRegulars.interfered << " noMoreRec:" << pktRegulars.noMoreReceivers << " underSens:" << pktRegulars.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-
+*/
 
   	myfile.open (fileRegularData, ios::out | ios::app);
   	myfile << "sent: " << pktRegulars.sent << " succ: " << pktRegulars.received << " drop: "<< packLoss << " rec: " << pktRegulars.received << " interf: " << pktRegulars.interfered << " noMoreRec: " << pktRegulars.noMoreReceivers << " underSens: " << pktRegulars.underSensitivity << "\n";
@@ -1198,8 +1198,6 @@ int main (int argc, char *argv[]){
 	//NS_LOG_DEBUG("pSucc: " << probSucc << " G: " << G << " S: " << S);
 
 	NS_LOG_DEBUG((unsigned)printSumTransmission());
-	cout << (unsigned)printSumTransmission() <<endl;
-
 
 	myfile.open (fileRtx, ios::out | ios::app);
 	myfile << nDevices << ": ";
@@ -1215,19 +1213,19 @@ int main (int argc, char *argv[]){
 
  	probSucc = probSucc * 100;
   
-  cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
+/*  cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ",    " << probNoMo << ",     " << probUSen  << ",  " << avgAlmDelay << endl;
-
+*/
  	myfile.open (fileAlarmMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay << "\n";
   	myfile.close();  
  
   
- 	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgAlmDelay(mSec):" << avgAlmDelay << " throughput:" << throughput << endl;
+/*   	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgAlmDelay(mSec):" << avgAlmDelay << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktAlarms.sent << " succ:" << pktAlarms.received << " drop:"<< packLoss << " rec:" << pktAlarms.received << " interf:" << pktAlarms.interfered << " noMoreRec:" << pktAlarms.noMoreReceivers << " underSens:" << pktAlarms.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-
+*/
 
   	myfile.open (fileAlarmData, ios::out | ios::app);
   	myfile << "sent: " << pktAlarms.sent << " succ: " << pktAlarms.received << " drop: "<< packLoss << " rec: " << pktAlarms.received << " interf: " << pktAlarms.interfered << " noMoreRec: " << pktAlarms.noMoreReceivers << " underSens: " << pktAlarms.underSensitivity << "\n";
