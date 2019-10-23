@@ -8,7 +8,16 @@ set output outFile
 
 set style line 3 lc rgb 'black' pt 9 ps 2
 
+set key spacing 2
+
+#set style fill solid border 0.2
+#set key box width 2 height 2 opaque
+set key outside
+set key center top
+set key horizontal left
+
 # Use a good looking palette
+set palette maxcolors 6
 set palette defined (0.0 "#D53E4F",\
  0.5 "#D53E4F",\
  0.5001 "#F46D43",\
@@ -24,6 +33,8 @@ set palette defined (0.0 "#D53E4F",\
 
 set cblab 'Spreading Factor' font "freeSans-Bold,16"
 
+set cbrange [6.5:12.5]
+
 # Set up style for buildings
 set style rect fc lt -1 fs solid 0.15 noborder
 
@@ -31,7 +42,7 @@ set style rect fc lt -1 fs solid 0.15 noborder
 #filename='endDevices.dat'
 
 # load the building locations
-#load 'buildings.dat'
+load 'buildings.dat'
 
 # Plot the data
 plot filename_edR using 1:2:3 with points pt 7 palette t 'ED Regular', filename_edA using 1:2:3 with points pt 10 palette t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'

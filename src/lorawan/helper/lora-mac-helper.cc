@@ -20,6 +20,8 @@
 
 #include "ns3/lora-mac-helper.h"
 #include "ns3/gateway-lora-phy.h"
+#include "ns3/end-device-lora-phy.h"
+#include "ns3/lora-net-device.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/log.h"
 #include "ns3/mobility-helper.h"
@@ -179,12 +181,12 @@ LoraMacHelper::ConfigureForEuRegion (Ptr<GatewayLoraMac> gwMac) const
       gwPhy->ResetReceptionPaths ();
 
       std::vector<double> frequencies;
-      frequencies.push_back (867.1);
+/*    frequencies.push_back (867.1);
       frequencies.push_back (867.3);
       frequencies.push_back (867.5);
       frequencies.push_back (867.7);
       frequencies.push_back (867.9);
-      frequencies.push_back (868.1);
+*/    frequencies.push_back (868.1);
       frequencies.push_back (868.3);
       frequencies.push_back (868.5);
 
@@ -220,23 +222,23 @@ LoraMacHelper::ApplyCommonEuConfigurations (Ptr<LoraMac> loraMac) const
   //////////////////////
   // Default channels //
   //////////////////////
-  Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (867.1, 0, 5);
-  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (867.3, 0, 5);
-  Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (867.5, 0, 5);
-  Ptr<LogicalLoraChannel> lc4 = CreateObject<LogicalLoraChannel> (867.7, 0, 5);
+  Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
+  Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
+  Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
+/*Ptr<LogicalLoraChannel> lc4 = CreateObject<LogicalLoraChannel> (867.7, 0, 5);
   Ptr<LogicalLoraChannel> lc5 = CreateObject<LogicalLoraChannel> (867.9, 0, 5);
   Ptr<LogicalLoraChannel> lc6 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
   Ptr<LogicalLoraChannel> lc7 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
   Ptr<LogicalLoraChannel> lc8 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
-  channelHelper.AddChannel (lc1);
+*/channelHelper.AddChannel (lc1);
   channelHelper.AddChannel (lc2);
   channelHelper.AddChannel (lc3);
-  channelHelper.AddChannel (lc4);
+/*channelHelper.AddChannel (lc4);
   channelHelper.AddChannel (lc5);
   channelHelper.AddChannel (lc6);
   channelHelper.AddChannel (lc7);
   channelHelper.AddChannel (lc8);
-
+*/
 
   
   loraMac->SetLogicalLoraChannelHelper (channelHelper);
@@ -295,11 +297,52 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       // NS_LOG_DEBUG ("Rx Power: " << highestRxPower);
       double rxPower = highestRxPower;
 
+     // Get the ED sensitivity
+      Ptr<EndDeviceLoraPhy> edPhy = loraNetDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+      const double *edSensitivity = edPhy->sensitivity;
+	
+
+      if(rxPower > *edSensitivity)
+        {
+	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *edSensitivity);
+          mac->SetDataRate (5);
+        }
+      else if (rxPower > *(edSensitivity+1))
+        {
+	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *(edSensitivity+1));
+          mac->SetDataRate (4);
+        }
+      else if (rxPower > *(edSensitivity+2))
+        {
+	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *(edSensitivity+2));
+          mac->SetDataRate (3);
+        }
+      else if (rxPower > *(edSensitivity+3))
+        {
+	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *(edSensitivity+3));
+          mac->SetDataRate (2);
+        }
+      else if (rxPower > *(edSensitivity+4))
+        {
+	      NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *(edSensitivity+4));
+          mac->SetDataRate (1);
+        }
+      else if (rxPower > *(edSensitivity+5))
+        {
+	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *(edSensitivity+5));
+          mac->SetDataRate (0);
+        }
+      else // Device is out of range. Assign SF12.
+        {
+          mac->SetDataRate (0);
+        }
+
       // Get the Gw sensitivity
-      Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
+/*    Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
       Ptr<LoraNetDevice> gatewayLoraNetDevice = gatewayNetDevice->GetObject<LoraNetDevice> ();
       Ptr<GatewayLoraPhy> gatewayPhy = gatewayLoraNetDevice->GetPhy ()->GetObject<GatewayLoraPhy> ();
       const double *gwSensitivity = gatewayPhy->sensitivity;
+
 
       if(rxPower > *gwSensitivity)
         {
@@ -329,7 +372,9 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         {
           mac->SetDataRate (0);
         }
-    }
+*/ 
+
+   }
 }
   
 void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int min, int max){

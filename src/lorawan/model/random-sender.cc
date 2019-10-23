@@ -76,10 +76,11 @@ void RandomSender::SendPacket (void){
   
 	m_mac->Send (packet);
 	
-    nxtDelay = Seconds(m_nextDelay->GetValue()) + Seconds(2);   
-  
-	NS_LOG_DEBUG ("Created an alarm on timer = " <<
-                nxtDelay.GetSeconds() << " Seconds");
+    nxtDelay = Seconds(m_nextDelay->GetValue()); 
+ 	//NS_LOG_DEBUG("nxt: " << nxtDelay.GetSeconds() << " now: " << Simulator::Now().GetSeconds()); 
+	//nxtDelay += Simulator::Now();   
+	NS_LOG_DEBUG ("The next alarm event with a = " <<
+                nxtDelay.GetSeconds() << " Seconds delay");
 	
 	// Schedule the next SendPacket event
   	m_sendEvent = Simulator::Schedule (nxtDelay, &RandomSender::SendPacket, this);

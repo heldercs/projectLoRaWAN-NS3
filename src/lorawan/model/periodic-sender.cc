@@ -107,6 +107,10 @@ PeriodicSender::SendPacket (void){
    	}
   
 	m_mac->Send (packet);
+
+	NS_LOG_DEBUG ("the next periodic event with a = " <<
+                m_interval.GetSeconds() << " Seconds delay");
+
   	// Schedule the next SendPacket event
   	m_sendEvent = Simulator::Schedule (m_interval, &PeriodicSender::SendPacket,
                                      this);

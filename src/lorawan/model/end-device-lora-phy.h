@@ -156,6 +156,8 @@ public:
    */
   void SwitchToSleep (void);
 
+  static const double sensitivity[6]; //!< The sensitivity vector of this device to different SFs
+
 private:
   /**
    * Switch to the RX state
@@ -181,8 +183,6 @@ private:
   TracedCallback<Ptr<const Packet>, uint32_t> m_wrongFrequency;
 
   TracedValue<State> m_state; //!< The state this PHY is currently in.
-
-  static const double sensitivity[6]; //!< The sensitivity vector of this device to different SFs
 
   double m_frequency; //!< The frequency this device is listening on
 

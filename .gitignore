@@ -1,4 +1,6 @@
 /.dir-locals.el
+*.jpg
+*.svg
 *.png
 *.eps
 *.dat
