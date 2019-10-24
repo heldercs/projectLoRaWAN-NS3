@@ -50,7 +50,7 @@ using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
-#define MAXRTX	4
+#define MAXRTX	6
 
 // Network settings
 int nDevices = 2;
@@ -99,12 +99,12 @@ Statistics pktAlarms;
 Time sumAlmDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = true;
-bool buildingsEnabled = true;
+bool shadowingEnabled = false;
+bool buildingsEnabled = false;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = true;
+bool printBuildings = false;
 //bool printDelay = true;
 time_t oldtime = time (0);
 
@@ -188,33 +188,28 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 							//cout << "received" << endl;
 							pktAlarms.received += 1;
 							if (status.rtxNum < (MAXRTX-1)){
-								//cout << "RTX rcv: " << status.rcvTime.GetMilliSeconds() << " snd: " << sndTimeDelay[id].GetMilliSeconds() << endl;
 								NS_LOG_DEBUG("almDely:" << (status.rcvTime - sndTimeDelay[id]).GetMilliSeconds() << " milliSeconds");
 								sumAlmDelay += status.rcvTime - sndTimeDelay[id];
 								sndTimeDelay[id] = Seconds(0);
 							}else{
-								//cout << "rcv: " << status.rcvTime.GetMilliSeconds() << " snd: " << status.sndTime.GetMilliSeconds() << endl;
 								NS_LOG_DEBUG("almDely:" << (status.rcvTime - status.sndTime).GetMilliSeconds() << " milliSeconds");
 								sumAlmDelay += status.rcvTime - status.sndTime;
 							}
 							NS_LOG_DEBUG("sumAlmDely:" << sumAlmDelay.GetMilliSeconds() << " milliSeconds");
             			break;
             			case UNDER_SENSITIVITY:
-								//cout << "sensity" << endl;
 								if(status.rtxFlag && status.rtxNum)
 									pktAlarms.sent -= 1;
 								else
               					pktAlarms.underSensitivity += 1;
            				break;
             			case NO_MORE_RECEIVERS:
-  								//cout << "noMore" << endl;
 							  	if(status.rtxFlag && status.rtxNum)
 									pktAlarms.sent -= 1;
 								else
 	               	   				pktAlarms.noMoreReceivers += 1;
              			break;
             			case INTERFERED:
-  	            				//cout << "interf" << " rtxN: " << (unsigned)status.rtxNum << endl;
 			 	  				if(status.rtxFlag && status.rtxNum)
 									pktAlarms.sent -= 1;
 								else
@@ -264,7 +259,8 @@ void TransmissionRegularCallback (Ptr<Packet> packet, LoraTxParameters txParams,
    
 void TransmissionAlarmCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32_t systemId){
 	NS_LOG_INFO ("Transmitted a alarm packet from device " << systemId);
-  	// Create a packetStatus
+ 
+	// Create a packetStatus
 	PacketStatus status;
 	int id;
 
@@ -561,12 +557,18 @@ int32_t findSfMin ( int *vec ){
 void starEdge ( NodeContainer endDevices ){	
     double angleAlm=0, sAngleAlm=M_PI/2;
     int radiusAlm;
-    if (nAlarms < 11)
-		radiusAlm=350;
-	else if(nAlarms < 15)
+	if (nAlarms < 8)
+		radiusAlm=4000;   // openfield 3000
+    else if (nAlarms < 10)
+		radiusAlm=3000;    // indoor 350; openFild 
+	else if(nAlarms < 12)
         radiusAlm=5500; // openField 5500; bigPlant 1400
+	else if(nAlarms < 14)
+        radiusAlm=5000; // openField 5500; bigPlant 1400
+   	else if (nAlarms < 20)
+		radiusAlm=5500;
     else
-        radiusAlm=1800;
+        radiusAlm=1000;
     uint8_t op=nAlarms%4, count=4, count2=2;
     //double angleAlm=0, sAngleAlm=3*M_PI/4;    
     //int radiusAlm=200;
@@ -581,14 +583,24 @@ void starEdge ( NodeContainer endDevices ){
                         pos.x = radiusAlm * cos(angleAlm);
                         pos.y = radiusAlm * sin(angleAlm);
                         if(count==1){
-							if (nAlarms < 11)
-								radiusAlm += 120;
-                            else if (nAlarms < 15)
+							if (nAlarms < 8)
+								radiusAlm += 0;
+							else if (nAlarms < 9)
+								radiusAlm = 5500;
+							else if (nAlarms < 10)
+								radiusAlm += 3500;    // indoor 120; openfield 3500
+                            else if (nAlarms < 12)
                                 radiusAlm -= 1000; // openField 1000; bigPlant 500
+                            else if (nAlarms < 14)
+                                radiusAlm -= 1500; // openField 1000; bigPlant 500
+                            else if (nAlarms < 16)
+								radiusAlm -= 800;
+                            else if (nAlarms < 18)
+								radiusAlm -= 1000;
                             else if (nAlarms < 20)
-								radiusAlm += 1500;
+								radiusAlm -= 800;
 							else
-                                radiusAlm += 1000;
+                                radiusAlm += 1200;
                             angleAlm += M_PI/4;
                             count=5;
                         }
@@ -600,12 +612,21 @@ void starEdge ( NodeContainer endDevices ){
                         op = 0;
                         break;
                 case 2:
-						if (nAlarms < 11){
+						if (nAlarms < 7){
+					       	pos.x = 1000 * cos(angleAlm); // openfiled
+                        	pos.y = 1000 * sin(angleAlm);
+						}else if (nAlarms < 10){
 				       		pos.x = 150 * cos(angleAlm); // smallPlant 150
                         	pos.y = 150 * sin(angleAlm);
-						}else if (nAlarms < 15){
+						}else if (nAlarms < 12){
 			       			pos.x = 2000 * cos(angleAlm); // opendFiled 2000; bigPlant 250
                         	pos.y = 2000 * sin(angleAlm);
+						}else if (nAlarms < 15){
+			       			pos.x = 1200 * cos(angleAlm); // opendFiled 2000; bigPlant 250
+                        	pos.y = 1200 * sin(angleAlm);
+						}else if (nAlarms < 20){
+			       			pos.x = 1300 * cos(angleAlm); // opendFiled 2000; bigPlant 250
+                        	pos.y = 1300 * sin(angleAlm);
 						}else{
                         	pos.x = 800 * cos(angleAlm);
                         	pos.y = 800 * sin(angleAlm);
@@ -614,19 +635,19 @@ void starEdge ( NodeContainer endDevices ){
 						if(count2==2){
                             sAngleAlm = M_PI;
                         }else{
-                            angleAlm = M_PI/4;
+                            //angleAlm = M_PI/4;
                             sAngleAlm = M_PI/2;
                             op = 0;
                         }
                         count2--;
                         break;
                 case 3:
-    					if (nAlarms < 15){
+    					if (nAlarms < 12){
 			       			pos.x = 2000 * cos(angleAlm); //openField 2000; bigPlant 500
                         	pos.y = 2000 * sin(angleAlm);
 						}else{
-                        	pos.x = 800 * cos(angleAlm);
-                        	pos.y = 800 * sin(angleAlm);
+                        	pos.x = 1500 * cos(angleAlm);
+                        	pos.y = 1500 * sin(angleAlm);
 						}
                         
 						if(count2==2){
@@ -656,7 +677,7 @@ void starEdge ( NodeContainer endDevices ){
  */
 void orbitEdge ( NodeContainer endDevices ){
     double angleAlm=0, sAngleAlm=3*M_PI/4;
-    int radiusAlm=100; // openField 800; bigPlant 200
+    int radiusAlm=1000; // openField 800; bigPlant 200
     
     // iterate our nodes and print their position.
     for (int j = nRegulars; j < nDevices; ++j){
@@ -668,22 +689,22 @@ void orbitEdge ( NodeContainer endDevices ){
         pos.y = radiusAlm * sin(angleAlm);
         position->SetPosition (pos);
         angleAlm += sAngleAlm;
-		if (nAlarms >= 19)
-			radiusAlm += 280;
-		else if (nAlarms >= 17)
-			radiusAlm += 300;
+		if (nAlarms >= 20)
+			radiusAlm += 200;
+		else if (nAlarms >= 18)
+			radiusAlm += 250;
         else if (nAlarms >= 15)
-            radiusAlm += 350;
+            radiusAlm += 300;
         else if (nAlarms >= 13)
             radiusAlm += 400;
 		else if (nAlarms >= 11)
 			radiusAlm += 500; 
         else if (nAlarms >= 9)  // openField 600; bigPlant 150
-            radiusAlm += 50;
+            radiusAlm += 600;
         else if (nAlarms >= 7)
             radiusAlm += 750;
         else
-            radiusAlm += 900; 
+            radiusAlm += 1000; 
     }	
 }		/* -----  end of function orbitEdge  ----- */
 
@@ -770,10 +791,10 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	nAlarms = 10;
-	nRegulars = nDevices - nAlarms;
-	//nRegulars = nDevices/(1.01); 
-	//nAlarms = nDevices - nRegulars;
+	//nAlarms = 10;
+	//nRegulars = nDevices - nAlarms;
+	nRegulars = nDevices/(1.01); 
+	nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
 
 
@@ -1213,9 +1234,9 @@ int main (int argc, char *argv[]){
 
  	probSucc = probSucc * 100;
   
-/*  cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
+  cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ",    " << probNoMo << ",     " << probUSen  << ",  " << avgAlmDelay << endl;
-*/
+
  	myfile.open (fileAlarmMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay << "\n";
   	myfile.close();  
