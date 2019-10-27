@@ -297,11 +297,91 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       // NS_LOG_DEBUG ("Rx Power: " << highestRxPower);
       double rxPower = highestRxPower;
 
+       // Get the Gw sensitivity
+      Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
+      Ptr<LoraNetDevice> gatewayLoraNetDevice = gatewayNetDevice->GetObject<LoraNetDevice> ();
+      Ptr<GatewayLoraPhy> gatewayPhy = gatewayLoraNetDevice->GetPhy ()->GetObject<GatewayLoraPhy> ();
+      const double *gwSensitivity = gatewayPhy->sensitivity;
+
+
+      if(rxPower > *gwSensitivity)
+        {
+          mac->SetDataRate (5);
+        }
+      else if (rxPower > *(gwSensitivity+1))
+        {
+          mac->SetDataRate (4);
+        }
+      else if (rxPower > *(gwSensitivity+2))
+        {
+          mac->SetDataRate (3);
+        }
+      else if (rxPower > *(gwSensitivity+3))
+        {
+          mac->SetDataRate (2);
+        }
+      else if (rxPower > *(gwSensitivity+4))
+        {
+          mac->SetDataRate (1);
+        }
+      else if (rxPower > *(gwSensitivity+5))
+        {
+          mac->SetDataRate (0);
+        }
+      else // Device is out of range. Assign SF12.
+        {
+          mac->SetDataRate (0);
+        }
+   }
+}
+  
+void
+LoraMacHelper::SetSpreadingFactorsUp (bool flagRtx, NodeContainer endDevices, NodeContainer gateways, Ptr<LoraChannel> channel)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j)
+    {
+      Ptr<Node> object = *j;
+      Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
+      NS_ASSERT (position != 0);
+      Ptr<NetDevice> netDevice = object->GetDevice (0);
+      Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
+      NS_ASSERT (loraNetDevice != 0);
+      Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
+      NS_ASSERT (mac != 0);
+
+      // Try computing the distance from each gateway and find the best one
+      Ptr<Node> bestGateway = gateways.Get (0);
+      Ptr<MobilityModel> bestGatewayPosition = bestGateway->GetObject<MobilityModel> ();
+
+      // Assume devices transmit at 14 dBm
+      double highestRxPower = channel->GetRxPower (14, position, bestGatewayPosition);
+
+      for (NodeContainer::Iterator currentGw = gateways.Begin () + 1;
+           currentGw != gateways.End (); ++currentGw)
+        {
+          // Compute the power received from the current gateway
+          Ptr<Node> curr = *currentGw;
+          Ptr<MobilityModel> currPosition = curr->GetObject<MobilityModel> ();
+          double currentRxPower = channel->GetRxPower (14, position, currPosition);    // dBm
+
+          if (currentRxPower > highestRxPower)
+            {
+              bestGateway = curr;
+              bestGatewayPosition = curr->GetObject<MobilityModel> ();
+              highestRxPower = currentRxPower;
+            }
+        }
+
+      // NS_LOG_DEBUG ("Rx Power: " << highestRxPower);
+      double rxPower = highestRxPower;
+
+	if(flagRtx){
      // Get the ED sensitivity
       Ptr<EndDeviceLoraPhy> edPhy = loraNetDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
       const double *edSensitivity = edPhy->sensitivity;
 	
-
       if(rxPower > *edSensitivity)
         {
 	 	  NS_LOG_DEBUG("rP: " << rxPower << " sen: " << *edSensitivity);
@@ -337,8 +417,9 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
           mac->SetDataRate (0);
         }
 
+	}else{
       // Get the Gw sensitivity
-/*    Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
+      Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
       Ptr<LoraNetDevice> gatewayLoraNetDevice = gatewayNetDevice->GetObject<LoraNetDevice> ();
       Ptr<GatewayLoraPhy> gatewayPhy = gatewayLoraNetDevice->GetPhy ()->GetObject<GatewayLoraPhy> ();
       const double *gwSensitivity = gatewayPhy->sensitivity;
@@ -372,57 +453,9 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         {
           mac->SetDataRate (0);
         }
-*/ 
+	}
 
    }
-}
-  
-void LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, int min, int max){
-  NS_LOG_FUNCTION_NOARGS ();
-
-	int sf=10;//, min=7, max=8;
-	
-	//RngSeedManager::SetSeed (endDevices.GetN());
-
-	//Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable> ();
-	//uv->SetAttribute("Min", DoubleValue(min));	
-	//uv->SetAttribute("Max", DoubleValue(max));	
-
-  for (int j = min; j < max; ++j){
-      Ptr<Node> object = endDevices.Get(j);
-      Ptr<NetDevice> netDevice = object->GetDevice (0);
-      Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
-      NS_ASSERT (loraNetDevice != 0);
-      Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
-      NS_ASSERT (mac != 0);
-			
-	//		sf = uv->GetInteger();
-	//		NS_LOG_DEBUG("SF: " << sf);	
-			
-			switch (sf) {
-							 	case 7:
-											mac->SetDataRate(5);	
-											break;
-							 	case 8:
-											mac->SetDataRate(4);	
-											break;
-								case 9:
-											mac->SetDataRate(3);	
-											break;
-								case 10:
-											mac->SetDataRate(2);	
-											break;
-								case 11:
-											mac->SetDataRate(1);	
-											break;
-								case 12:
-											mac->SetDataRate(0);	
-											break;
-								default:
-											mac->SetDataRate(0);	
-											break;
-			 }/* -----  end switch  ----- */
-	}
 }
 
 }

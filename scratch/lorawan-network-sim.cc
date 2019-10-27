@@ -50,11 +50,11 @@ using namespace std;
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
 // Network settings
-int nDevices = 2000;
+int nDevices = 1;
 int gatewayRings = 1;
-int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
-double radius = 7500;
-double gatewayRadius = 7500/((gatewayRings-1)*2+1);
+int nGateways = gatewayRings;
+double radius = 500;
+double gatewayRadius = 200;
 double simulationTime = 600;
 int appPeriodSeconds = 600;
 //string fileDelay = "./scratch/delay.dat";
@@ -64,7 +64,7 @@ int interfered = 0;
 int underSensitivity = 0;
 int received = 0;
 int sent = 0;
-int packSucc = 0;
+//int packSucc = 0;
 vector<int> totalTxAmounts (4, 0);
 
 // sum Time on Air
@@ -98,7 +98,7 @@ struct PacketStatus {
 	uint32_t senderId;
 	uint8_t rtxNum;
 	bool rtxFlag;
-	bool packFlag;
+	uint8_t outFlag;
 	Time sndTime;
 	Time rcvTime;
 	Time duration; 
@@ -117,39 +117,39 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
       	for (int j = 0; j < nGateways; j++){
           	switch (status.outcomes.at (j)){
 					case RECEIVED:
+							if (status.outFlag >= 1 && status.outFlag <= nGateways){
+								sumDelay += status.rcvTime - status.sndTime;
+								NS_LOG_DEBUG("sumDely:" << sumDelay.GetMilliSeconds() << " milliSeconds");
 								received += 1;
-								if (status.packFlag){
-									//NS_LOG_INFO ("rcvTime: " << status.rcvTime);
-/*  									if(printDelay){
-  											ofstream myfile;
-  											myfile.open (fileDelay, ios::out | ios::app);
-        									myfile << ", " << uDelay.GetNanoSeconds();
-    										myfile.close();
-										}
-*/									sumDelay += status.rcvTime - status.sndTime;
-									NS_LOG_DEBUG("sumDely:" << sumDelay.GetMilliSeconds() << " milliSeconds");
-									
-									packSucc += 1;
-									status.packFlag = 0;
-								}
+								status.outFlag = nGateways+1;
+							}
             		break;
             		case UNDER_SENSITIVITY:
-							if(status.rtxFlag && status.rtxNum)
-								sent -= 1;
-							else
-                				underSensitivity += 1;
+							if (!status.outFlag){
+								if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+                					underSensitivity += 1;
+								status.outFlag++;
+							}
            			break;
-            		case NO_MORE_RECEIVERS:
-							if(status.rtxFlag && status.rtxNum)
-								sent -= 1;
-							else
-                	   			noMoreReceivers += 1;
+            		case NO_MORE_RECEIVERS:		
+							if (!status.outFlag){
+								if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+                	   				noMoreReceivers += 1;
+								status.outFlag++;
+							}
              		break;
             		case INTERFERED:
-							if(status.rtxFlag && status.rtxNum)
-								sent -= 1;
-							else
-               					interfered += 1;
+							if (!status.outFlag){
+								if(status.rtxFlag && status.rtxNum)
+									sent -= 1;
+								else
+               						interfered += 1;
+								status.outFlag++;
+							}
            			break;
             		case UNSET:
                 	break;
@@ -171,8 +171,8 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.senderId = systemId;
 	status.rtxNum = txParams.retxLeft;
 	status.rtxFlag = txParams.retxFlag;
-	status.packFlag = 1;
-	if(status.rtxNum >= 3)
+	status.outFlag = 0;
+	if(!status.rtxFlag || status.rtxNum == 3)
 		status.sndTime = Simulator::Now();
 	status.rcvTime = Time::Max();
 	status.outcomeNumber = 0;
@@ -202,7 +202,8 @@ void PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId){
   	std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   	(*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
   	(*it).second.outcomeNumber += 1;
-	(*it).second.rcvTime = Simulator::Now(); 
+	(*it).second.rcvTime = Simulator::Now();
+	(*it).second.outFlag++; 
 
   	CheckReceptionByAllGWsComplete (it);
 }
@@ -248,6 +249,7 @@ void PrintSimulationTime (void){
 
 void PrintEndDevices (NodeContainer endDevices, NodeContainer gateways, std::string filename){
   	const char * c = filename.c_str ();
+	vector<int> countSF(6,0);
   	std::ofstream spreadingFactorFile;
   	spreadingFactorFile.open (c);
   	for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j){
@@ -259,6 +261,7 @@ void PrintEndDevices (NodeContainer endDevices, NodeContainer gateways, std::str
       	NS_ASSERT (loraNetDevice != 0);
       	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       	int sf = int(mac->GetSfFromDataRate(mac->GetDataRate ()));
+		countSF[sf-7]++;
 		//NS_LOG_DEBUG("sf: " << sf);
       	Vector pos = position->GetPosition ();
       	spreadingFactorFile << pos.x << " " << pos.y << " " << sf << endl;
@@ -309,7 +312,7 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
 
   	BuildingsHelper::Install (endDevices);
   	BuildingsHelper::Install (gateways);
-  	BuildingsHelper::MakeMobilityModelConsistent ();
+  	//BuildingsHelper::MakeMobilityModelConsistent ();
 	
 	if(printBuildings){
 		std::ofstream myfile;
@@ -355,7 +358,8 @@ int main (int argc, char *argv[]){
 	string endDevFile="./TestResult/test";
 	int trial=1, packLoss=0;
   	uint32_t nSeed=1, nTx=0;
-	double angle=0, sAngle=0, avgDelay = 0;
+	double angle=0, sAngle=M_PI, avgDelay = 0;
+	bool flagRtx=0;
 	//float G=0, S=0;
 	//Time avgDelay = MilliSeconds(0);
 
@@ -382,22 +386,22 @@ int main (int argc, char *argv[]){
 	myfile.close();
 */	
   	// Set up logging
-  	LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
-  	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
-	//LogComponentEnable ("NetworkController", LOG_LEVEL_ALL);
-  	//LogComponentEnable ("NetworkControllerComponent", LOG_LEVEL_ALL);
- 	//LogComponentEnable ("NetworkScheduler", LOG_LEVEL_ALL);
- 	//LogComponentEnable ("NetworkStatus", LOG_LEVEL_ALL);
+  	//LogComponentEnable("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
+  	//LogComponentEnable("NetworkServer", LOG_LEVEL_ALL);
+	//LogComponentEnable("NetworkController", LOG_LEVEL_ALL);
+  	//LogComponentEnable("NetworkControllerComponent", LOG_LEVEL_ALL);
+ 	//LogComponentEnable("NetworkScheduler", LOG_LEVEL_ALL);
+ 	//LogComponentEnable("NetworkStatus", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   	//LogComponentEnable("CorrelatedShadowingPropagationLossModel", LOG_LEVEL_INFO);
   	//LogComponentEnable("BuildingPenetrationLoss", LOG_LEVEL_INFO);
   	//LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
-  	LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  	LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+  	//LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  	//LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
-  	LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
-  	LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
+  	//LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  	//LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
   	//LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
 	//LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
@@ -420,7 +424,7 @@ int main (int argc, char *argv[]){
 	// Compute the number of gateways
   	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
   	nGateways = gatewayRings;
-  	sAngle = M_PI; //(2*M_PI)/(nGateways);
+  	sAngle = (2*M_PI)/nGateways;
   
 	// Create the time value from the period
   	Time appPeriod = Seconds (appPeriodSeconds);
@@ -521,8 +525,8 @@ int main (int argc, char *argv[]){
 		Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       	phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionCallback));
-		Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-		mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+		//Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+		//mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   	/*********************
@@ -598,7 +602,7 @@ int main (int argc, char *argv[]){
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
 
-  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  	macHelper.SetSpreadingFactorsUp (flagRtx, endDevices, gateways, channel);
   	//macHelper.SetSpreadingFactorsUp (endDevices);
   	
 	/*  uint8_t count=5;
@@ -670,15 +674,15 @@ int main (int argc, char *argv[]){
   	*  Results  *
   	*************/
   	double throughput = 0;
-  	packLoss = sent - packSucc;
-  	throughput = packSucc * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+  	packLoss = sent - received;
+  	throughput = received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
  	//NS_LOG_DEBUG("sumT: " << sumToA.GetSeconds() << " int: " << appPeriodSeconds );
   	
 	//normalized offered traffic	
 	//G =  (double)sumToA.GetSeconds()/appPeriodSeconds;
 
-  	double probSucc = (double(packSucc)/sent);
+  	double probSucc = (double(received)/sent);
   	double probLoss = (double(packLoss)/sent)*100;
 	double probInte = (double(interfered)/sent)*100;
 	double probNoMo = (double(noMoreReceivers)/sent)*100;
@@ -701,7 +705,7 @@ int main (int argc, char *argv[]){
 	myfile << "\n\n";
 	myfile.close();
 */	
-/* 	cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgMilliSec" << endl; 
+/*   	cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgMilliSec" << endl; 
    	cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay << endl;
 */
   	myfile.open (fileMetric, ios::out | ios::app);
@@ -709,14 +713,14 @@ int main (int argc, char *argv[]){
   	myfile.close();  
   
 
-/*  	cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay << " throughput:" << throughput << endl;
+/*    	cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  	cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  	cout << "sent:" << sent << " succ:" << received << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 */
 
   	myfile.open (fileData, ios::out | ios::app);
-  	myfile << "sent: " << sent << " succ: " << packSucc << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";
+  	myfile << "sent: " << sent << " succ: " << received << " drop: "<< packLoss << " rec: " << received << " interf: " << interfered << " noMoreRec: " << noMoreReceivers << " underSens: " << underSensitivity << "\n";
   	myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
   	myfile << "numDev: " << nDevices << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
   	myfile << "#######################################################################" << "\n\n";

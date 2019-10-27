@@ -50,16 +50,18 @@ using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
-#define MAXRTX	6
+#define MAXRTX	4
 
 // Network settings
 int nDevices = 2;
 int nRegulars =1;
 int nAlarms = 1;
-int gatewayRings = 1;
-int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
+int gatewayRings = 2;
+//int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
+int nGateways = gatewayRings;
 double radius = 800;
-double gatewayRadius = 7500/((gatewayRings-1)*2+1);
+//double gatewayRadius = 7500/((gatewayRings-1)*2+1);
+double gatewayRadius = 300;
 double simulationTime = 3600;
 int appPeriodSeconds = 60;
 vector<uint8_t> totalTxAmounts (MAXRTX, 0);
@@ -125,7 +127,7 @@ struct PacketStatus {
 	uint32_t senderId;
 	uint8_t rtxNum;
 	bool rtxFlag;
-//	bool packFlag;
+	uint8_t outFlag;
 	bool almFlag;
 	Time sndTime;
 	Time rcvTime;
@@ -141,30 +143,46 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 		// Check whether this packet is received by all gateways	
 		if ((*it).second.outcomeNumber == nGateways){
 			NS_LOG_DEBUG("Regular receved all gw");
-      		// Update the statistics
+   			// Update the statistics
       		PacketStatus status = (*it).second;
       		for (int j = 0; j < nGateways; j++){
           		switch (status.outcomes.at (j)){
 						case RECEIVED:
-									pktRegulars.received += 1;
+   								if (status.outFlag >= 1 && status.outFlag <= nGateways){
+										pktRegulars.received += 1;
+										status.outFlag = nGateways+1;
+								}
+								NS_LOG_DEBUG("Received: " << pktRegulars.received);
 	         			break;
             			case UNDER_SENSITIVITY:
 /*  									if(status.rtxFlag && status.rtxNum)
 										pktRegulars.sent -= 1;
 									else
-*/   	          						pktRegulars.underSensitivity += 1;
+*/									if (!status.outFlag){
+										pktRegulars.underSensitivity += 1;
+										status.outFlag++;
+									}
+	   	          					NS_LOG_DEBUG("Sensitivity: "<< pktRegulars.underSensitivity);
            				break;
             			case NO_MORE_RECEIVERS:
 /*    									if(status.rtxFlag && status.rtxNum)
 										pktRegulars.sent -= 1;
 									else
-*/            	   						pktRegulars.noMoreReceivers += 1;
+*/									if (!status.outFlag){
+										pktRegulars.noMoreReceivers += 1;
+										status.outFlag++;
+									}
+            	   					NS_LOG_DEBUG("no_more_receivers: " << pktRegulars.noMoreReceivers);
              			break;
             			case INTERFERED:
 /*                       				if(status.rtxFlag && status.rtxNum)
 										pktRegulars.sent -= 1;
 									else
-*/	               						pktRegulars.interfered += 1;
+*/            						if (!status.outFlag){
+										pktRegulars.interfered += 1;
+										status.outFlag++;
+									}
+	           	   					NS_LOG_DEBUG("interfer: " << pktRegulars.interfered);
            				break;
             			case UNSET:
                 		break;
@@ -185,35 +203,50 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
       		for (int j = 0; j < nGateways; j++){
           		switch (status.outcomes.at (j)){
 						case RECEIVED:
-							//cout << "received" << endl;
-							pktAlarms.received += 1;
-							if (status.rtxNum < (MAXRTX-1)){
-								NS_LOG_DEBUG("almDely:" << (status.rcvTime - sndTimeDelay[id]).GetMilliSeconds() << " milliSeconds");
-								sumAlmDelay += status.rcvTime - sndTimeDelay[id];
-								sndTimeDelay[id] = Seconds(0);
-							}else{
-								NS_LOG_DEBUG("almDely:" << (status.rcvTime - status.sndTime).GetMilliSeconds() << " milliSeconds");
-								sumAlmDelay += status.rcvTime - status.sndTime;
-							}
-							NS_LOG_DEBUG("sumAlmDely:" << sumAlmDelay.GetMilliSeconds() << " milliSeconds");
+								if (status.outFlag >= 1 && status.outFlag <= nGateways){
+									if (status.rtxNum < (MAXRTX-1)){
+										NS_LOG_DEBUG("almDely:" << (status.rcvTime - sndTimeDelay[id]).GetMilliSeconds() << " milliSeconds");
+										sumAlmDelay += status.rcvTime - sndTimeDelay[id];
+										sndTimeDelay[id] = Seconds(0);
+									}else{
+										NS_LOG_DEBUG("almDely:" << (status.rcvTime - status.sndTime).GetMilliSeconds() << " milliSeconds");
+										sumAlmDelay += status.rcvTime - status.sndTime;
+										NS_LOG_DEBUG("sumDely:" << sumAlmDelay.GetMilliSeconds() << " milliSeconds");
+									}
+									pktAlarms.received += 1;
+									status.outFlag = nGateways+1;
+								}
+		           	   			NS_LOG_DEBUG("receiver: " << pktAlarms.received);
             			break;
             			case UNDER_SENSITIVITY:
-								if(status.rtxFlag && status.rtxNum)
-									pktAlarms.sent -= 1;
-								else
-              					pktAlarms.underSensitivity += 1;
+			        			if (!status.outFlag){
+									if(status.rtxFlag && status.rtxNum)
+										pktAlarms.sent -= 1;
+									else
+              							pktAlarms.underSensitivity += 1;
+									status.outFlag++;
+								}
+			           	   		NS_LOG_DEBUG("under_sensitivity: " << pktAlarms.underSensitivity);
            				break;
             			case NO_MORE_RECEIVERS:
-							  	if(status.rtxFlag && status.rtxNum)
-									pktAlarms.sent -= 1;
-								else
-	               	   				pktAlarms.noMoreReceivers += 1;
+				     			if (!status.outFlag){
+							  		if(status.rtxFlag && status.rtxNum)
+										pktAlarms.sent -= 1;
+									else
+	               	   					pktAlarms.noMoreReceivers += 1;
+									status.outFlag++;
+								}
+				           	   	NS_LOG_DEBUG("no_more_receivers: " << pktAlarms.noMoreReceivers);
              			break;
             			case INTERFERED:
-			 	  				if(status.rtxFlag && status.rtxNum)
-									pktAlarms.sent -= 1;
-								else
-	               					pktAlarms.interfered += 1;
+			 	      			if (!status.outFlag){
+				 					if(status.rtxFlag && status.rtxNum)
+										pktAlarms.sent -= 1;
+									else
+	               						pktAlarms.interfered += 1;
+									status.outFlag++;
+								}
+					           	NS_LOG_DEBUG("interfe: " << pktAlarms.interfered);
            				break;
             			case UNSET:
    	            			//cout << "unset" << endl;
@@ -239,15 +272,15 @@ void TransmissionRegularCallback (Ptr<Packet> packet, LoraTxParameters txParams,
 	status.rtxNum = txParams.retxLeft;
 	status.rtxFlag = txParams.retxFlag;
 	status.almFlag = 0;
-//	status.packFlag = 1;
-	if(status.rtxNum >= MAXRTX-1)
+	status.outFlag = 0;
+	if(!status.rtxFlag || status.rtxNum == MAXRTX-1)
 		status.sndTime = Simulator::Now();
 	status.rcvTime = Time::Max();
 	status.outcomeNumber = 0;
 	status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
 	status.duration = LoraPhy::GetOnAirTime (packet, txParams);	
 	pktRegulars.sent += 1;
-	NS_LOG_DEBUG("Regular flag:" << txParams.retxFlag << " num:" << (unsigned)txParams.retxLeft);	
+	NS_LOG_DEBUG("Regular sf:" << (unsigned)txParams.sf << " sndTime: " << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);	
 		
 /*	if (status.rtxFlag)
 		totalTxAmounts.at(4-status.rtxNum-1)++;
@@ -268,9 +301,9 @@ void TransmissionAlarmCallback (Ptr<Packet> packet, LoraTxParameters txParams, u
 	status.senderId = systemId;
 	status.rtxNum = txParams.retxLeft;
 	status.rtxFlag = txParams.retxFlag;
-//	status.packFlag = 1;
+	status.outFlag = 0;
 	status.almFlag = 1;
-	if(status.rtxNum >= MAXRTX-1)	
+	if(!status.rtxFlag || status.rtxNum == MAXRTX-1)	
 		status.sndTime = Simulator::Now();
 	status.rcvTime = Time::Max();
 	status.outcomeNumber = 0;
@@ -279,7 +312,7 @@ void TransmissionAlarmCallback (Ptr<Packet> packet, LoraTxParameters txParams, u
 	pktAlarms.sent += 1;
 	id = status.senderId - nRegulars;
 
-	NS_LOG_DEBUG("sf: " << (unsigned)txParams.sf << " sndT:" << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);	
+	NS_LOG_DEBUG("Alarm sf: " << (unsigned)txParams.sf << " sndT:" << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);	
 	
 	if (status.rtxFlag && status.sndTime != Seconds(0)){
 		NS_LOG_DEBUG("insert value in " << id << " sndT: " << status.sndTime.GetMilliSeconds());
@@ -301,8 +334,8 @@ void PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId){
   	std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
 	(*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
 	(*it).second.outcomeNumber += 1;
-	(*it).second.rcvTime = Simulator::Now(); 
-
+	(*it).second.rcvTime = Simulator::Now();
+	(*it).second.outFlag++; 
   	CheckReceptionByAllGWsComplete (it);
 }
 
@@ -770,7 +803,8 @@ int main (int argc, char *argv[]){
 	string gwFile="./TestResult/test";
 	int trial=1, packLoss=0;
   	uint32_t nSeed=1;
-	double angle=0, sAngle=0, avgAlmDelay = 0;
+	bool flagRtx=0;
+	double angleGW=0, sAngleGW=M_PI, avgAlmDelay = 0;
 	//float G=0, S=0;
 	ofstream myfile;
 
@@ -791,7 +825,7 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	//nAlarms = 10;
+	//nAlarms = 1;
 	//nRegulars = nDevices - nAlarms;
 	nRegulars = nDevices/(1.01); 
 	nAlarms = nDevices - nRegulars;
@@ -844,7 +878,6 @@ int main (int argc, char *argv[]){
 	// Compute the number of gateways
   	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
   	nGateways = gatewayRings;
-  	sAngle = M_PI; //(2*M_PI)/(nGateways);
 
  
 	// Create the time value from the period
@@ -985,9 +1018,11 @@ int main (int argc, char *argv[]){
 			Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       		phy->TraceConnectWithoutContext ("StartSending",
         	                               MakeCallback (&TransmissionAlarmCallback));
-			Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-			mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
-			mac->SetMaxNumberOfTransmissions (MAXRTX);
+			if (flagRtx){
+				Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+				mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+				mac->SetMaxNumberOfTransmissions (MAXRTX);
+			}
 			// initializer sumRtxDelay 
 			sndTimeDelay.push_back(Seconds(0));	
 	}
@@ -1011,11 +1046,11 @@ int main (int argc, char *argv[]){
     	j != gateways.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
       	Vector position = mobility->GetPosition ();
-		position.x = gatewayRadius * cos(angle); 
-  		position.y = gatewayRadius * sin(angle); 
+		position.x = gatewayRadius * cos(angleGW); 
+  		position.y = gatewayRadius * sin(angleGW); 
       	position.z = 15;
       	mobility->SetPosition (position);
-		angle += sAngle;
+		angleGW += sAngleGW;
 	}
 
   	// Create a netdevice for each gateway
@@ -1066,7 +1101,7 @@ int main (int argc, char *argv[]){
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
 	// set spreading factor for regular event
-  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  	macHelper.SetSpreadingFactorsUp (flagRtx, endDevices, gateways, channel);
 	
  	/********************************************************
   	*  Set up strategies for end device's spreading factor  *
@@ -1171,7 +1206,7 @@ int main (int argc, char *argv[]){
  	probSucc = probSucc * 100;
     
 
-/*  	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
+/*   	cout << endl << "nRegulars" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
    	cout << "  "  << nRegulars << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
 */
   	myfile.open (fileRegularMetric, ios::out | ios::app);
@@ -1179,7 +1214,7 @@ int main (int argc, char *argv[]){
   	myfile.close();  
   
  
-/*  	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+/*    	cout << endl << "numDev:" << nRegulars << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktRegulars.sent << " succ:" << pktRegulars.received << " drop:"<< packLoss << " rec:" << pktRegulars.received << " interf:" << pktRegulars.interfered << " noMoreRec:" << pktRegulars.noMoreReceivers << " underSens:" << pktRegulars.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
@@ -1226,6 +1261,7 @@ int main (int argc, char *argv[]){
 	myfile << "\n" ;
 	myfile.close();
 
+	NS_LOG_DEBUG("sumDely:" << sumAlmDelay.GetMilliSeconds() << " milliSeconds");
 	if (pktAlarms.received)
 		avgAlmDelay = (sumAlmDelay/pktAlarms.received).GetMilliSeconds();
   	NS_LOG_DEBUG("avgAlmDelay: " << avgAlmDelay << " milliSeconds");	
@@ -1234,15 +1270,15 @@ int main (int argc, char *argv[]){
 
  	probSucc = probSucc * 100;
   
-  cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
+/*    cout << endl << "nAlarms" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgAlmDelay" << endl; 
    	cout << "  "  << nAlarms << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ",    " << probNoMo << ",     " << probUSen  << ",  " << avgAlmDelay << endl;
-
+*/
  	myfile.open (fileAlarmMetric, ios::out | ios::app);
   	myfile << nDevices << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgAlmDelay << "\n";
   	myfile.close();  
  
   
-/*   	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgAlmDelay(mSec):" << avgAlmDelay << " throughput:" << throughput << endl;
+/*     	cout << endl << "numDev:" << nAlarms << " numGW:" << nGateways << " simTime:" << simulationTime << " avgAlmDelay(mSec):" << avgAlmDelay << " throughput:" << throughput << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   	cout << "sent:" << pktAlarms.sent << " succ:" << pktAlarms.received << " drop:"<< packLoss << " rec:" << pktAlarms.received << " interf:" << pktAlarms.interfered << " noMoreRec:" << pktAlarms.noMoreReceivers << " underSens:" << pktAlarms.underSensitivity << endl;
   	cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
