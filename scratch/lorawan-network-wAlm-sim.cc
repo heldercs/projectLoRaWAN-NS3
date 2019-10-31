@@ -53,17 +53,17 @@ NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 #define MAXRTX	4
 
 // Network settings
-int nDevices = 2;
+int nDevices = 600;
 int nRegulars =1;
 int nAlarms = 1;
-int gatewayRings = 2;
+int gatewayRings = 1;
 //int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
 int nGateways = gatewayRings;
-double radius = 800;
+double radius = 6000;
 //double gatewayRadius = 7500/((gatewayRings-1)*2+1);
-double gatewayRadius = 300;
-double simulationTime = 3600;
-int appPeriodSeconds = 60;
+double gatewayRadius = 0;
+double simulationTime = 600;
+int appPeriodSeconds = 600;
 vector<uint8_t> totalTxAmounts (MAXRTX, 0);
 vector<Time> sndTimeDelay;
 
@@ -461,7 +461,6 @@ void setStrategiesAllocationSF (NodeContainer endDevices, uint8_t mode){
 				case MODE6:
 				case MODE9:
 					{
-						//cout << "mode: " << (unsigned)mode << endl;
 						uint8_t sfAlm =5;
 						for (int j = nRegulars; j < nDevices; ++j){
 							Ptr<Node> object = endDevices.Get(j);
@@ -483,7 +482,6 @@ void setStrategiesAllocationSF (NodeContainer endDevices, uint8_t mode){
       						NS_ASSERT (mac != 0);
 							mac->SetDataRate(sfAlm);
 						}
-
 						for (int j = 0; j < nRegulars; ++j){
 							Ptr<Node> object = endDevices.Get(j);
     						Ptr<NetDevice> netDevice = object->GetDevice (0);
@@ -492,7 +490,7 @@ void setStrategiesAllocationSF (NodeContainer endDevices, uint8_t mode){
       						Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
       						NS_ASSERT (mac != 0);
     						countReg = mac->GetDataRate();
-							if (countReg == sfAlm){
+							if (sfAlm && countReg == sfAlm ){
 								countReg -=1;
 								mac->SetDataRate(countReg);
 							}
@@ -500,7 +498,6 @@ void setStrategiesAllocationSF (NodeContainer endDevices, uint8_t mode){
 					}
 					break;
 				default:
-					//cout << "sf default"  << endl;
 					break;
 		}				/* -----  end switch  ----- */
 }		/* -----  end of function setStrategiesAllocationSF  ----- */
@@ -801,9 +798,9 @@ int main (int argc, char *argv[]){
 	string endDevRegFile="./TestResult/test";
 	string endDevAlmFile="./TestResult/test";
 	string gwFile="./TestResult/test";
-	int trial=1, packLoss=0;
-  	uint32_t nSeed=1;
-	bool flagRtx=0;
+	int trial=3, packLoss=0;
+  	uint32_t nSeed=2;
+	bool flagRtx=1;
 	double angleGW=0, sAngleGW=M_PI, avgAlmDelay = 0;
 	//float G=0, S=0;
 	ofstream myfile;
@@ -825,7 +822,7 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	//nAlarms = 1;
+	//nAlarms = 5;
 	//nRegulars = nDevices - nAlarms;
 	nRegulars = nDevices/(1.01); 
 	nAlarms = nDevices - nRegulars;
@@ -854,8 +851,8 @@ int main (int argc, char *argv[]){
   	//LogComponentEnable ("LoraMac", LOG_LEVEL_ALL);
   	//LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   	//LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
-  	//LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-	//LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
+  	//LogComponentEnable ("//LogicalLoraChannelHelper", LOG_LEVEL_ALL);
+	//LogComponentEnable ("//LogicalLoraChannel", LOG_LEVEL_ALL);
   	//LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
   	//LogComponentEnable ("LoraPhyHelper", LOG_LEVEL_ALL);
   	//LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
@@ -1112,7 +1109,6 @@ int main (int argc, char *argv[]){
   	* Create Network Server *
   	*************************/
   	NS_LOG_INFO ("Create Network Server...");
-
   	NodeContainer networkServers;
   	networkServers.Create (1);
 

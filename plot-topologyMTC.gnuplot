@@ -3,7 +3,7 @@ reset
 
 # Set terminal up
 #set term pngcairo font "FreeSans, 10" size 1024, 768
-set term postscript eps color blacktext "FreeSans-Bold" 10
+set term postscript eps color blacktext "FreeSans-Bold" 16
 set output outFile
 
 set style line 3 lc rgb 'black' pt 9 ps 2
@@ -31,7 +31,7 @@ set palette defined (0.0 "#D53E4F",\
  4.5001 "#ABDDA4",\
  5.0 "#ABDDA4")
 
-set cblab 'Spreading Factor' font "freeSans-Bold,16"
+#set cblab 'Spreading Factor' font "freeSans-Bold,16"
 
 set cbrange [6.5:12.5]
 
@@ -42,7 +42,7 @@ set style rect fc lt -1 fs solid 0.15 noborder
 #filename='endDevices.dat'
 
 # load the building locations
-load 'buildings.dat'
+#load 'buildings.dat'
 
 # Plot the data
 plot filename_edR using 1:2:3 with points pt 7 palette t 'ED Regular', filename_edA using 1:2:3 with points pt 10 palette t 'ED Alarm', filename_gw using 1:2 with points ls 3 t 'Gateway'
