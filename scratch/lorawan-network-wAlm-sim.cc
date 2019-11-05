@@ -101,12 +101,12 @@ Statistics pktAlarms;
 Time sumAlmDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = false;
-bool buildingsEnabled = false;
+bool shadowingEnabled = true;
+bool buildingsEnabled = true;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = false;
+bool printBuildings = true;
 //bool printDelay = true;
 time_t oldtime = time (0);
 
@@ -220,30 +220,36 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
             			break;
             			case UNDER_SENSITIVITY:
 			        			if (!status.outFlag){
-									if(status.rtxFlag && status.rtxNum)
+									if(status.rtxFlag && status.rtxNum){
 										pktAlarms.sent -= 1;
-									else
+									}else{
               							pktAlarms.underSensitivity += 1;
+										sndTimeDelay[id] = Seconds(0);					
+									}
 									status.outFlag++;
 								}
 			           	   		NS_LOG_DEBUG("under_sensitivity: " << pktAlarms.underSensitivity);
            				break;
             			case NO_MORE_RECEIVERS:
 				     			if (!status.outFlag){
-							  		if(status.rtxFlag && status.rtxNum)
+							  		if(status.rtxFlag && status.rtxNum){
 										pktAlarms.sent -= 1;
-									else
+									}else{
 	               	   					pktAlarms.noMoreReceivers += 1;
+										sndTimeDelay[id] = Seconds(0);
+									}
 									status.outFlag++;
 								}
 				           	   	NS_LOG_DEBUG("no_more_receivers: " << pktAlarms.noMoreReceivers);
              			break;
             			case INTERFERED:
 			 	      			if (!status.outFlag){
-				 					if(status.rtxFlag && status.rtxNum)
+				 					if(status.rtxFlag && status.rtxNum){
 										pktAlarms.sent -= 1;
-									else
+									}else{
 	               						pktAlarms.interfered += 1;
+										sndTimeDelay[id] = Seconds(0);	
+									}
 									status.outFlag++;
 								}
 					           	NS_LOG_DEBUG("interfe: " << pktAlarms.interfered);
@@ -822,10 +828,10 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	//nAlarms = 5;
-	//nRegulars = nDevices - nAlarms;
-	nRegulars = nDevices/(1.01); 
-	nAlarms = nDevices - nRegulars;
+	nAlarms = 10;
+	nRegulars = nDevices - nAlarms;
+	//nRegulars = nDevices/(1.01); 
+	//nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
 
 
