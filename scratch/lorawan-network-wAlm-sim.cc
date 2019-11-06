@@ -64,6 +64,7 @@ double radius = 6000;
 double gatewayRadius = 0;
 double simulationTime = 600;
 int appPeriodSeconds = 600;
+
 vector<uint8_t> totalTxAmounts (MAXRTX, 0);
 vector<Time> sndTimeDelay;
 
@@ -207,7 +208,6 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 									if (status.rtxNum < (MAXRTX-1)){
 										NS_LOG_DEBUG("almDely:" << (status.rcvTime - sndTimeDelay[id]).GetMilliSeconds() << " milliSeconds");
 										sumAlmDelay += status.rcvTime - sndTimeDelay[id];
-										sndTimeDelay[id] = Seconds(0);
 									}else{
 										NS_LOG_DEBUG("almDely:" << (status.rcvTime - status.sndTime).GetMilliSeconds() << " milliSeconds");
 										sumAlmDelay += status.rcvTime - status.sndTime;
@@ -220,36 +220,30 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
             			break;
             			case UNDER_SENSITIVITY:
 			        			if (!status.outFlag){
-									if(status.rtxFlag && status.rtxNum){
+									if(status.rtxFlag && status.rtxNum)
 										pktAlarms.sent -= 1;
-									}else{
+									else
               							pktAlarms.underSensitivity += 1;
-										sndTimeDelay[id] = Seconds(0);					
-									}
 									status.outFlag++;
 								}
 			           	   		NS_LOG_DEBUG("under_sensitivity: " << pktAlarms.underSensitivity);
            				break;
             			case NO_MORE_RECEIVERS:
 				     			if (!status.outFlag){
-							  		if(status.rtxFlag && status.rtxNum){
+							  		if(status.rtxFlag && status.rtxNum)
 										pktAlarms.sent -= 1;
-									}else{
+									else
 	               	   					pktAlarms.noMoreReceivers += 1;
-										sndTimeDelay[id] = Seconds(0);
-									}
 									status.outFlag++;
 								}
 				           	   	NS_LOG_DEBUG("no_more_receivers: " << pktAlarms.noMoreReceivers);
              			break;
             			case INTERFERED:
 			 	      			if (!status.outFlag){
-				 					if(status.rtxFlag && status.rtxNum){
+				 					if(status.rtxFlag && status.rtxNum)
 										pktAlarms.sent -= 1;
-									}else{
+									else
 	               						pktAlarms.interfered += 1;
-										sndTimeDelay[id] = Seconds(0);	
-									}
 									status.outFlag++;
 								}
 					           	NS_LOG_DEBUG("interfe: " << pktAlarms.interfered);
@@ -321,6 +315,8 @@ void TransmissionAlarmCallback (Ptr<Packet> packet, LoraTxParameters txParams, u
 	NS_LOG_DEBUG("Alarm sf: " << (unsigned)txParams.sf << " sndT:" << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);	
 	
 	if (status.rtxFlag && status.sndTime != Seconds(0)){
+		NS_LOG_DEBUG("initialize vector");
+		sndTimeDelay[id] = Seconds(0);
 		NS_LOG_DEBUG("insert value in " << id << " sndT: " << status.sndTime.GetMilliSeconds());
 		sndTimeDelay[id] = status.sndTime;
 	}
@@ -596,9 +592,9 @@ void starEdge ( NodeContainer endDevices ){
 	if (nAlarms < 8)
 		radiusAlm=4000;   // openfield 3000
     else if (nAlarms < 10)
-		radiusAlm=3000;    // indoor 350; openFild 
+		radiusAlm=3000;    // indoor 350; openFild 3000 
 	else if(nAlarms < 12)
-        radiusAlm=5500; // openField 5500; bigPlant 1400
+        radiusAlm=450; // openField 5500; indoor 450
 	else if(nAlarms < 14)
         radiusAlm=5000; // openField 5500; bigPlant 1400
    	else if (nAlarms < 20)
@@ -624,9 +620,9 @@ void starEdge ( NodeContainer endDevices ){
 							else if (nAlarms < 9)
 								radiusAlm = 5500;
 							else if (nAlarms < 10)
-								radiusAlm += 3500;    // indoor 120; openfield 3500
+								radiusAlm += 3500;    // openfield 3500
                             else if (nAlarms < 12)
-                                radiusAlm -= 1000; // openField 1000; bigPlant 500
+                                radiusAlm -= 100; // openField 1000; indoor 100
                             else if (nAlarms < 14)
                                 radiusAlm -= 1500; // openField 1000; bigPlant 500
                             else if (nAlarms < 16)
@@ -655,8 +651,8 @@ void starEdge ( NodeContainer endDevices ){
 				       		pos.x = 150 * cos(angleAlm); // smallPlant 150
                         	pos.y = 150 * sin(angleAlm);
 						}else if (nAlarms < 12){
-			       			pos.x = 2000 * cos(angleAlm); // opendFiled 2000; bigPlant 250
-                        	pos.y = 2000 * sin(angleAlm);
+			       			pos.x = 150 * cos(angleAlm); // opendFiled 2000; indoor 150
+                        	pos.y = 150 * sin(angleAlm);
 						}else if (nAlarms < 15){
 			       			pos.x = 1200 * cos(angleAlm); // opendFiled 2000; bigPlant 250
                         	pos.y = 1200 * sin(angleAlm);
@@ -713,7 +709,7 @@ void starEdge ( NodeContainer endDevices ){
  */
 void orbitEdge ( NodeContainer endDevices ){
     double angleAlm=0, sAngleAlm=3*M_PI/4;
-    int radiusAlm=1000; // openField 800; bigPlant 200
+    int radiusAlm=80; // openField 1000; indoor 80
     
     // iterate our nodes and print their position.
     for (int j = nRegulars; j < nDevices; ++j){
@@ -734,9 +730,9 @@ void orbitEdge ( NodeContainer endDevices ){
         else if (nAlarms >= 13)
             radiusAlm += 400;
 		else if (nAlarms >= 11)
-			radiusAlm += 500; 
-        else if (nAlarms >= 9)  // openField 600; bigPlant 150
-            radiusAlm += 600;
+			radiusAlm += 500;   
+        else if (nAlarms >= 9)  // openField 600; indoor 50
+            radiusAlm += 50;
         else if (nAlarms >= 7)
             radiusAlm += 750;
         else
@@ -1025,11 +1021,10 @@ int main (int argc, char *argv[]){
 				Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
 				mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
 				mac->SetMaxNumberOfTransmissions (MAXRTX);
+				// initializer sumRtxDelay 
+				sndTimeDelay.push_back(Seconds(0));	
 			}
-			// initializer sumRtxDelay 
-			sndTimeDelay.push_back(Seconds(0));	
 	}
-	//cout << "size: " << sndTimeDelay.size() << endl;
 
   	/*********************
   	*  Create Gateways  *
