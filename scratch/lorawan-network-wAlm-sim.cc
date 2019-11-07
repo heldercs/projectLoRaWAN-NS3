@@ -50,7 +50,7 @@ using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
-#define MAXRTX	4
+#define MAXRTX	8
 
 // Network settings
 int nDevices = 600;
@@ -102,12 +102,12 @@ Statistics pktAlarms;
 Time sumAlmDelay=Seconds(0);
 
 // Channel model
-bool shadowingEnabled = true;
-bool buildingsEnabled = true;
+bool shadowingEnabled = false;
+bool buildingsEnabled = false;
 
 // Output control
 bool printEDs = true;
-bool printBuildings = true;
+bool printBuildings = false;
 //bool printDelay = true;
 time_t oldtime = time (0);
 
@@ -594,7 +594,7 @@ void starEdge ( NodeContainer endDevices ){
     else if (nAlarms < 10)
 		radiusAlm=3000;    // indoor 350; openFild 3000 
 	else if(nAlarms < 12)
-        radiusAlm=450; // openField 5500; indoor 450
+        radiusAlm=5500; // openField 5500; indoor 450
 	else if(nAlarms < 14)
         radiusAlm=5000; // openField 5500; bigPlant 1400
    	else if (nAlarms < 20)
@@ -622,7 +622,7 @@ void starEdge ( NodeContainer endDevices ){
 							else if (nAlarms < 10)
 								radiusAlm += 3500;    // openfield 3500
                             else if (nAlarms < 12)
-                                radiusAlm -= 100; // openField 1000; indoor 100
+                                radiusAlm -= 1000; // openField 1000; indoor 100
                             else if (nAlarms < 14)
                                 radiusAlm -= 1500; // openField 1000; bigPlant 500
                             else if (nAlarms < 16)
@@ -651,8 +651,8 @@ void starEdge ( NodeContainer endDevices ){
 				       		pos.x = 150 * cos(angleAlm); // smallPlant 150
                         	pos.y = 150 * sin(angleAlm);
 						}else if (nAlarms < 12){
-			       			pos.x = 150 * cos(angleAlm); // opendFiled 2000; indoor 150
-                        	pos.y = 150 * sin(angleAlm);
+			       			pos.x = 2000 * cos(angleAlm); // opendFiled 2000; indoor 150
+                        	pos.y = 2000 * sin(angleAlm);
 						}else if (nAlarms < 15){
 			       			pos.x = 1200 * cos(angleAlm); // opendFiled 2000; bigPlant 250
                         	pos.y = 1200 * sin(angleAlm);
@@ -709,7 +709,7 @@ void starEdge ( NodeContainer endDevices ){
  */
 void orbitEdge ( NodeContainer endDevices ){
     double angleAlm=0, sAngleAlm=3*M_PI/4;
-    int radiusAlm=80; // openField 1000; indoor 80
+    int radiusAlm=1000; // openField 1000; indoor 80
     
     // iterate our nodes and print their position.
     for (int j = nRegulars; j < nDevices; ++j){
@@ -732,7 +732,7 @@ void orbitEdge ( NodeContainer endDevices ){
 		else if (nAlarms >= 11)
 			radiusAlm += 500;   
         else if (nAlarms >= 9)  // openField 600; indoor 50
-            radiusAlm += 50;
+            radiusAlm += 600;
         else if (nAlarms >= 7)
             radiusAlm += 750;
         else
@@ -824,10 +824,10 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("trial", "set trial parameters", trial);
   	cmd.Parse (argc, argv);
 
-	nAlarms = 10;
-	nRegulars = nDevices - nAlarms;
-	//nRegulars = nDevices/(1.01); 
-	//nAlarms = nDevices - nRegulars;
+	//nAlarms = 10;
+	//nRegulars = nDevices - nAlarms;
+	nRegulars = nDevices/(1.01); 
+	nAlarms = nDevices - nRegulars;
 	NS_LOG_DEBUG("number regular event: " << nRegulars << "number alarm event: " << nAlarms );
 
 
