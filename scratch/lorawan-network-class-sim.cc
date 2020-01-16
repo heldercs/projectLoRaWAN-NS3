@@ -796,7 +796,7 @@ int main (int argc, char *argv[]){
 		***************/
 		throughput = 0;
 		packLoss = sentSf7 - packSuccSf7;
-		throughput = packSuccSf7 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf7 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
 		probSucc = (double(packSuccSf7)/sentSf7);
 		probLoss = (double(packLoss)/sentSf7)*100;
@@ -840,7 +840,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf8 - packSuccSf8;
-		throughput = packSuccSf8 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf8 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf8)/sentSf8);
   		probLoss = (double(packLoss)/sentSf8)*100;
@@ -884,7 +884,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf9 - packSuccSf9;
-		throughput = packSuccSf9 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf9 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf9)/sentSf9);
   		probLoss = (double(packLoss)/sentSf9)*100;
