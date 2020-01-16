@@ -44,6 +44,18 @@ public:
   	void SendPacket (void);
 
   	/**
+   	* Set the sending mean
+   	* \param mean the mean between two packet sendings
+   	*/
+  	void SetMean (Time mean);
+  	
+	/**
+   	* Get the sending inteval
+   	* \returns the interval between two packet sends
+   	*/
+  	Time GetMean (void) const;
+
+  	/**
    	* Start the application by scheduling the first SendPacket event
    	*/
   	void StartApplication (void);
@@ -54,6 +66,11 @@ public:
   	void StopApplication (void);
 
 private:
+  	/**
+   	* The interval between to consecutive send events
+   	*/
+  	Time m_mInterval;
+	
 	/**
 	* The next time with which the alarm will be set to send messages
 	*/

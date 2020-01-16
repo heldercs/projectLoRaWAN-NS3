@@ -41,13 +41,15 @@
 #include "ns3/buildings-helper.h"
 #include "ns3/double.h"
 #include "ns3/random-variable-stream.h"
-#include "ns3/periodic-sender-helper.h"
+#include "ns3/random-sender-helper.h"
 #include "ns3/command-line.h"
 
 using namespace ns3;
 using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
+
+#define MAXRTX	4
 
 // Network settings
 int nDevices = 2000;
@@ -263,7 +265,8 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.rtxFlag = txParams.retxFlag;
 	status.sf = txParams.sf;
 	status.packFlag = 1;
-	status.sndTime = Simulator::Now();
+	if(!status.rtxFlag || status.rtxNum == MAXRTX-1)	
+		status.sndTime = Simulator::Now();
 	status.rcvTime = Time::Max();
 	status.outcomeNumber = 0;
 	status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
@@ -286,6 +289,7 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	NS_LOG_DEBUG("flag:" << txParams.retxFlag << "num:" << (unsigned)txParams.retxLeft);	
 	if(cntDevices < nDevices){	
  		sumToA += LoraPhy::GetOnAirTime (packet, txParams);
+		//cout << "ToA: " << LoraPhy::GetOnAirTime (packet, txParams).GetSeconds() << " ms to sf: " << (unsigned)status.sf << endl;
 		NS_LOG_DEBUG("sumToA: " << sumToA.GetSeconds());
 		cntDevices++;
   	}
@@ -467,7 +471,7 @@ int main (int argc, char *argv[]){
   	cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   	cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   	cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
-  	//cmd.AddValue ("file1", "files containing result information", fileData);
+  	cmd.AddValue ("file1", "files containing result information", fileData);
   	//cmd.AddValue ("file2", "files containing result data", fileMetric);
   	//cmd.AddValue ("file3", "files containing result data", fileDelay);
   	cmd.AddValue ("trial", "files containing result data", trial);
@@ -518,6 +522,8 @@ int main (int argc, char *argv[]){
   	//LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
   	//LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   	//LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
+   	//LogComponentEnable("RandomSenderHelper", LOG_LEVEL_ALL);
+  	//LogComponentEnable("RandomSender", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
   	//LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
 
@@ -601,7 +607,7 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=5200.0, y=0.0;
+  	//double x=5000.0, y=0.0;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
@@ -750,8 +756,8 @@ int main (int argc, char *argv[]){
   	*********************************************/
 
   	Time appStopTime = Seconds(simulationTime);
-  	PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-  	appHelper.SetPeriod (Seconds (appPeriodSeconds));
+  	RandomSenderHelper appHelper = RandomSenderHelper ();
+  	//appHelper.SetMean (Seconds (appPeriodSeconds));
   	ApplicationContainer appContainer = appHelper.Install (endDevices);
 	
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
@@ -775,10 +781,14 @@ int main (int argc, char *argv[]){
   	Simulator::Stop (appStopTime + Hours(1));
 
   	//PrintSimulationTime ();
-  	//oldtime = time (0) ;
+  	//oldtime = time (0);
+	//cout << "init Time:" << endl;
   	Simulator::Run ();
-  	//cout << "Real time: " << std::time (0) - oldtime << " seconds" << endl;
   	Simulator::Destroy ();
+  	//cout << "Real time: " << std::time (0) - oldtime << " seconds" << endl;
+  	/*****************************************
+  	*  Statistics Results for regular event  *
+  	*****************************************/
 
 	if (nDevicesSf7){
 		/***************
@@ -786,7 +796,7 @@ int main (int argc, char *argv[]){
 		***************/
 		throughput = 0;
 		packLoss = sentSf7 - packSuccSf7;
-		throughput = packSuccSf7 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf7 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
 		probSucc = (double(packSuccSf7)/sentSf7);
 		probLoss = (double(packLoss)/sentSf7)*100;
@@ -800,26 +810,26 @@ int main (int argc, char *argv[]){
 		myfile << "\n\n";
 		myfile.close();
 	*/	
-  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
-   		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
+  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
+   		//cout << "  " << nDevicesSf7 << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
 
 	  	myfile.open (fileMetric, ios::out | ios::app);
-  		myfile << "SF7 ," << nDevicesSf7 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
+  		myfile << "SF7 ," << nDevicesSf7 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen  << "\n";
   		myfile.close();  
   
 
- 		//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+ 		//cout << endl << "numDev:" << nDevicesSf7 << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  		//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  		//cout << "sent:" << sentSf7 << " succ:" << packSuccSf7 << " drop:"<< packLoss << " rec:" << receivedSf7 << " interf:" << interferedSf7 << " noMoreRec:" << noMoreReceiversSf7 << " underSens:" << underSensitivitySf7 << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  		//myfile.open (fileData, ios::out | ios::app);
-  		//myfile << "sent: " << sentSf7 << " succ: " << packSuccSf7 << " drop: "<< packLoss << " rec: " << receivedSf7 << " interf: " << interferedSf7 << " noMoreRec: " << noMoreReceiversSf7 << " underSens: " << underSensitivitySf7 << "\n";
-  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  		//myfile << "numDevSf7: " << nDevicesSf7 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  		//myfile << "#######################################################################" << "\n\n";
-  		//myfile.close();  
+  		myfile.open (fileData, ios::out | ios::app);
+  		myfile << "sentSf7: " << sentSf7 << " succ: " << packSuccSf7 << " drop: "<< packLoss << " rec: " << receivedSf7 << " interf: " << interferedSf7 << " noMoreRec: " << noMoreReceiversSf7 << " underSens: " << underSensitivitySf7 << "\n";
+  		myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		myfile << "numDevSf7: " << nDevicesSf7 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		myfile << "#######################################################################" << "\n\n";
+  		myfile.close();  
 
 
 	}
@@ -830,7 +840,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf8 - packSuccSf8;
-		throughput = packSuccSf8 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf8 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf8)/sentSf8);
   		probLoss = (double(packLoss)/sentSf8)*100;
@@ -844,26 +854,27 @@ int main (int argc, char *argv[]){
 		myfile << "\n\n";
 		myfile.close();
 		*/	
-  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
-   		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
+
+  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
+   		//cout << "  " << nDevicesSf8 << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
 
   		myfile.open (fileMetric8, ios::out | ios::app);
-  		myfile << "SF8 ," << nDevicesSf8 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
+  		myfile << "SF8 ," << nDevicesSf8 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << "\n";
   		myfile.close();  
   
 
- 		//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+ 		//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  		//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  		//cout << "sent:" << sentSf8 << " succ:" << packSuccSf8 << " drop:"<< packLoss << " rec:" << receivedSf8 << " interf:" << interferedSf8 << " noMoreRec:" << noMoreReceiversSf8 << " underSens:" << underSensitivitySf8 << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  		//myfile.open (fileData, ios::out | ios::app);
-  		//myfile << "sent: " << sentSf8 << " succ: " << packSuccSf8 << " drop: "<< packLoss << " rec: " << receivedSf8 << " interf: " << interferedSf8 << " noMoreRec: " << noMoreReceiversSf8 << " underSens: " << underSensitivitySf8 << "\n";
-  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  		//myfile << "numDevSf8: " << nDevicesSf8 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  		//myfile << "#######################################################################" << "\n\n";
-  		//myfile.close();  
+  		myfile.open (fileData, ios::out | ios::app);
+  		myfile << "sentSf8: " << sentSf8 << " succ: " << packSuccSf8 << " drop: "<< packLoss << " rec: " << receivedSf8 << " interf: " << interferedSf8 << " noMoreRec: " << noMoreReceiversSf8 << " underSens: " << underSensitivitySf8 << "\n";
+  		myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		myfile << "numDevSf8: " << nDevicesSf8 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		myfile << "#######################################################################" << "\n\n";
+  		myfile.close();  
  	
 	}
 	
@@ -873,7 +884,7 @@ int main (int argc, char *argv[]){
   		***************/
   		throughput = 0;
   		packLoss = sentSf9 - packSuccSf9;
-		throughput = packSuccSf9 * 28 * 8 / ((simulationTime - appStartTime) * 1000.0);
+		throughput = packSuccSf9 * 14 * 8 / ((simulationTime - appStartTime) * 1000.0);
 
   		probSucc = (double(packSuccSf9)/sentSf9);
   		probLoss = (double(packLoss)/sentSf9)*100;
@@ -887,26 +898,26 @@ int main (int argc, char *argv[]){
 		myfile << "\n\n";
 		myfile.close();
 		*/	
-  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgNanoSec" << ", " << "G" << ", " << "S" << endl; 
-   		//cout << "  " << nDevices << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << ", " << avgDelay.GetNanoSeconds() << ", " << G << ", " << S << endl;
+  		//cout << endl << "nDevices" << ", " << "throughput" << ", " << "probSucc" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
+   		//cout << "  " << nDevicesSf9 << ",     " << throughput << ",     " << probSucc << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
 
   		myfile.open (fileMetric9, ios::out | ios::app);
-  		myfile << "SF9," << nDevicesSf9 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << ", " << "\n";
+  		myfile << "SF9," << nDevicesSf9 << ", " << throughput << ", " << probSucc << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << "\n";
   		myfile.close();  
   
 
- 		//cout << endl << "numDev:" << nDevices << " numGW:" << nGateways << " simTime:" << simulationTime << " avgDelay:" << avgDelay.GetNanoSeconds() << " throughput:" << throughput << endl;
+ 		//cout << endl << "numDev:" << nDevicesSf9 << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
-  		//cout << "sent:" << sent << " succ:" << packSucc << " drop:"<< packLoss << " rec:" << received << " interf:" << interfered << " noMoreRec:" << noMoreReceivers << " underSens:" << underSensitivity << endl;
+  		//cout << "sent:" << sentSf9 << " succ:" << packSuccSf9 << " drop:"<< packLoss << " rec:" << receivedSf9 << " interf:" << interferedSf9 << " noMoreRec:" << noMoreReceiversSf9 << " underSens:" << underSensitivitySf9 << endl;
   		//cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
 
 
-  		//myfile.open (fileData, ios::out | ios::app);
-  		//myfile << "sent: " << sentSf9 << " succ: " << packSuccSf9 << " drop: "<< packLoss << " rec: " << receivedSf9 << " interf: " << interferedSf9 << " noMoreRec: " << noMoreReceiversSf9 << " underSens: " << underSensitivitySf9 << "\n";
-  		//myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
-  		//myfile << "numDevSf9: " << nDevicesSf9 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
-  		//myfile << "#######################################################################" << "\n\n";
-  		//myfile.close();  
+  		myfile.open (fileData, ios::out | ios::app);
+  		myfile << "sentSf9: " << sentSf9 << " succ: " << packSuccSf9 << " drop: "<< packLoss << " rec: " << receivedSf9 << " interf: " << interferedSf9 << " noMoreRec: " << noMoreReceiversSf9 << " underSens: " << underSensitivitySf9 << "\n";
+  		myfile << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << "\n";
+  		myfile << "numDevSf9: " << nDevicesSf9 << " numGat: " << nGateways << " simTime: " << simulationTime << " throughput: " << throughput<< "\n";
+  		myfile << "#######################################################################" << "\n\n";
+  		myfile.close();  
  	
 	}
 

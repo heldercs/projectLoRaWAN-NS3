@@ -49,11 +49,21 @@ RandomSender::RandomSender () :
 	NS_LOG_FUNCTION_NOARGS ();
 		
 	m_nextDelay = CreateObject<ExponentialRandomVariable> ();
-	m_nextDelay->SetAttribute ("Mean", DoubleValue (600));
+	m_nextDelay->SetAttribute ("Mean", DoubleValue (10));
 }
 
 RandomSender::~RandomSender (){
 	NS_LOG_FUNCTION_NOARGS ();
+}
+
+void RandomSender::SetMean (Time mean) {
+  NS_LOG_FUNCTION (this << mean);
+  m_mInterval = mean;
+}
+
+Time RandomSender::GetMean (void) const {
+  NS_LOG_FUNCTION (this);
+  return m_mInterval;
 }
 
 void RandomSender::SetInitialDelay (Time delay){
@@ -71,11 +81,14 @@ void RandomSender::SendPacket (void){
   	if (m_randomPktSize == true){
       	packet = Create<Packet>(5+size);
     }else{
-      	packet = Create<Packet>(5);
+      	packet = Create<Packet>(19);
     }
   
+
 	m_mac->Send (packet);
-	
+
+	//m_nextDelay->SetAttribute ("Mean", DoubleValue (m_mInterval.GetSeconds()));
+
     nxtDelay = Seconds(m_nextDelay->GetValue()); 
  	//NS_LOG_DEBUG("nxt: " << nxtDelay.GetSeconds() << " now: " << Simulator::Now().GetSeconds()); 
 	//nxtDelay += Simulator::Now();   

@@ -47,6 +47,15 @@ public:
   	ApplicationContainer Install (NodeContainer c) const;
 
   	ApplicationContainer Install (Ptr<Node> node) const;
+  	/**
+   	* Set the period to be used by the applications created by this helper.
+   	*
+   	* A value of Seconds (0) results in randomly generated periods according to
+   	* the model contained in the TR 45.820 document.
+   	*
+   	* \param period The period to set
+   	*/
+  	void SetMean (Time mean);
 
 private:
 	Ptr<Application> InstallPriv (Ptr<Node> node) const;
@@ -54,6 +63,7 @@ private:
   	ObjectFactory m_factory;
 
   	Ptr<ExponentialRandomVariable> m_initialDelay;
+	Time m_mean; // mean to exponencial for Alarm
 };
 
 } // namespace ns3

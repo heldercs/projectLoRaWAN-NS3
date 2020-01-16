@@ -877,7 +877,7 @@ int main (int argc, char *argv[]){
 	// Compute the number of gateways
   	//nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
   	nGateways = gatewayRings;
-
+	sAngleGW = 2*M_PI/nGateways;
  
 	// Create the time value from the period
   	Time appPeriod = Seconds (appPeriodSeconds);
