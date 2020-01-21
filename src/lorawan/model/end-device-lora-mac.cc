@@ -94,6 +94,11 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   // transmit on.
   m_uniformRV = CreateObject<UniformRandomVariable> ();
 
+  // Initialize the random variable we'll use to decide which channel to
+  // transmit on.
+  m_expRV = CreateObject<ExponentialRandomVariable> ();
+  m_expRV->SetAttribute ("Mean", DoubleValue (2));
+
   // Void the two receiveWindow events
 //  m_closeWindow = EventId ();
 //  m_closeWindow.Cancel ();
@@ -156,7 +161,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     // or because we are receiving, schedule a tx/retx later
 
     Time netxTxDelay = GetNextTransmissionDelay ();
-	NS_LOG_DEBUG("nxtDelay:" << netxTxDelay);
+	NS_LOG_DEBUG( "id: " << m_device->GetNode ()->GetId () << " nxtDelay: " << netxTxDelay);
     if (netxTxDelay != Seconds (0))
       {
         // Add the ACK_TIMEOUT random delay if it is a retransmission.
@@ -496,7 +501,7 @@ void
 EndDeviceLoraMac::TxFinished (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
+    
   // Schedule the opening of the first receive window
   Simulator::Schedule (m_receiveDelay1,
                        &EndDeviceLoraMac::OpenFirstReceiveWindow, this);
@@ -514,7 +519,7 @@ void
 EndDeviceLoraMac::OpenFirstReceiveWindow (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
+ 
   // Set Phy in Standby mode
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
 
@@ -529,7 +534,7 @@ void
 EndDeviceLoraMac::CloseFirstReceiveWindow (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
+ 
   Ptr<EndDeviceLoraPhy> phy = m_phy->GetObject<EndDeviceLoraPhy> ();
 
   // Check the Phy layer's state:
@@ -558,7 +563,7 @@ void
 EndDeviceLoraMac::OpenSecondReceiveWindow (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
+ 
   // Check for receiver status: if it's locked on a packet, don't open this
   // window at all.
   if (m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () == EndDeviceLoraPhy::RX)
@@ -591,8 +596,9 @@ void
 EndDeviceLoraMac::CloseSecondReceiveWindow (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
+ 
   Ptr<EndDeviceLoraPhy> phy = m_phy->GetObject<EndDeviceLoraPhy> ();
+  Time nxtRtx = Seconds(0);
 
   // NS_ASSERT (phy->m_state != EndDeviceLoraPhy::TX &&
   // phy->m_state != EndDeviceLoraPhy::SLEEP);
@@ -600,6 +606,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
   // Check the Phy layer's state:
   // - RX -> We have received a preamble.
   // - STANDBY -> Nothing was detected.
+  NS_LOG_DEBUG ("phySt: "<< phy->GetState ());
   switch (phy->GetState ())
     {
     case EndDeviceLoraPhy::TX:
@@ -616,10 +623,14 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     }
 	
     if (m_retxParams.waitingAck){
-        NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission.");
+        NS_LOG_DEBUG ("id: " << m_device->GetNode()->GetId() << " No reception initiated by PHY: rescheduling transmission.");
         if (m_retxParams.retxLeft > 0 ){
             NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
-            this->Send (m_retxParams.packet);
+			nxtRtx = Seconds(m_expRV->GetValue());
+			NS_LOG_DEBUG("nxtRtx:" << nxtRtx);
+        	postponeTransmission (nxtRtx, m_retxParams.packet);
+			
+            //this->Send (m_retxParams.packet);
           }else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX){
             uint8_t txs = m_maxNumTx - (m_retxParams.retxLeft);
             m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
@@ -656,6 +667,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     NS_LOG_DEBUG ("lungh lista " << logicalChannels.size ());
 
     Time waitingTime = Time::Max ();
+	NS_LOG_DEBUG("wTime: " << waitingTime);
 
     // Try every channel
     std::vector<Ptr<LogicalLoraChannel> >::iterator it;
@@ -664,7 +676,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
         // Pointer to the current channel
         Ptr<LogicalLoraChannel> logicalChannel = *it;
         double frequency = logicalChannel->GetFrequency ();
-
+	
         waitingTime = std::min (waitingTime, m_channelHelper.GetWaitingTime (logicalChannel));
 
         NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " <<

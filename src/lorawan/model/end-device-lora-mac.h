@@ -375,6 +375,12 @@ private:
   Ptr<UniformRandomVariable> m_uniformRV;
 
   /**
+   * An uniform random variable, used by the Shuffle method to randomly reorder
+   * the channel list.
+   */
+  Ptr<ExponentialRandomVariable> m_expRV;  
+
+  /**
    * The DataRate this device is using to transmit.
    */
   TracedValue<uint8_t> m_dataRate;
