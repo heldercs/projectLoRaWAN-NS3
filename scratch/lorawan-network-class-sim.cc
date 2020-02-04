@@ -51,7 +51,7 @@ using namespace std;
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
 #define MAXRTX	4
-#define FLGRTX	1 
+#define FLGRTX	0 
 
 // Network settings
 int nDevices = 2000;
@@ -66,8 +66,11 @@ int appPeriodSeconds = 600;
 
 
 vector <vector <uint8_t> > totalTxAmounts (3, vector<uint8_t>(MAXRTX, 0));
+
+#if FLGRTX
 vector<Time> sndTimeDelay;
 vector<uint8_t> statusRtx;
+#endif
 
 typedef struct _Statistics{
 	int noMoreReceivers = 0;
@@ -164,8 +167,10 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
             		case UNDER_SENSITIVITY:
 			        			if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){		
-	      								pktSF[status.sf-7].underSensitivity += 1;
+	      									pktSF[status.sf-7].underSensitivity += 1;
+#if FLGRTX
 										statusRtx[status.senderId] = UNDER_SENSITIVITY;  
+#endif
 									}
 									status.outFlag++;
 								}
@@ -175,7 +180,9 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 								if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){	
 										pktSF[status.sf-7].noMoreReceivers += 1;
-											statusRtx[status.senderId] = NO_MORE_RECEIVERS;  
+#if FLGRTX
+										statusRtx[status.senderId] = NO_MORE_RECEIVERS;  
+#endif
 									}
 									status.outFlag++;
 								}
@@ -185,7 +192,9 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 			 	      			if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){		
 										pktSF[status.sf-7].interfered += 1;
+#if FLGRTX
 										statusRtx[status.senderId] = INTERFERED;  
+#endif
 									}
 									status.outFlag++;
 								}
@@ -432,14 +441,26 @@ int main (int argc, char *argv[]){
 	endDevFile += to_string(trial) + "/endDevices" + to_string(nDevices) + ".dat";
 
 	switch ((int)radius) {
+#if FLGRTX
 			case 2900:	
+#else
+			case 4200:	
+#endif					
 					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
 					break;
+#if FLGRTX
 			case 3500:	
+#else
+			case 4900:	
+#endif					
 					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
 					fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
 					break;
+#if FLGRTX
 			case 4200:	
+#else
+			case 5600:	
+#endif					
 					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
 					fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
 					fileMetric9 += to_string(trial) + "/traffic-10/result-STAs-SF9.dat";
