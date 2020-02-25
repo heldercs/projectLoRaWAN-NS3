@@ -37,7 +37,7 @@ RandomSenderHelper::RandomSenderHelper (){
                    ("ns3::ParetoRandomVariable[Bound=10|Shape=2.5]"));
 
 	m_initialDelay = CreateObject<ExponentialRandomVariable> ();
-	m_initialDelay->SetAttribute ("Mean", DoubleValue (10));
+	m_initialDelay->SetAttribute ("Mean", DoubleValue (600));
 }
 
 RandomSenderHelper::~RandomSenderHelper (){
@@ -64,26 +64,24 @@ Ptr<Application> RandomSenderHelper::InstallPriv (Ptr<Node> node) const{
 	NS_LOG_FUNCTION (this << node);
 
   	Ptr<RandomSender> app = m_factory.Create<RandomSender> ();
-  
+  	
 	Time initTime;
-
-	//m_initialDelay->SetAttribute ("Mean", DoubleValue (m_mean.GetSeconds()));
 
 	initTime = Seconds (m_initialDelay->GetValue ());	
  
   	NS_LOG_DEBUG ("Created an alarm on timer = " <<
                 initTime.GetSeconds() << " Seconds");
 
-  	app->SetInitialDelay (initTime);
-
+ 	app->SetInitialDelay (initTime);
+	app->SetMean (m_initialDelay->GetMean());
   	app->SetNode (node);
   	node->AddApplication (app);
 
  	return(app);
 }
 
-void RandomSenderHelper::SetMean (Time mean) {
-  m_mean = mean;
+void RandomSenderHelper::SetMean (int mean) {
+	m_initialDelay->SetAttribute ("Mean", DoubleValue (mean));
 }
 
 } // namespace ns3

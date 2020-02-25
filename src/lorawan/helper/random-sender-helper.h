@@ -55,7 +55,7 @@ public:
    	*
    	* \param period The period to set
    	*/
-  	void SetMean (Time mean);
+  	void SetMean (int mean);
 
 private:
 	Ptr<Application> InstallPriv (Ptr<Node> node) const;
@@ -63,7 +63,6 @@ private:
   	ObjectFactory m_factory;
 
   	Ptr<ExponentialRandomVariable> m_initialDelay;
-	Time m_mean; // mean to exponencial for Alarm
 };
 
 } // namespace ns3

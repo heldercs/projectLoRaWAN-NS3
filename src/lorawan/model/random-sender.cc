@@ -47,28 +47,23 @@ RandomSender::RandomSender () :
 	m_initialDelay (Seconds (1)),
 	m_randomPktSize (0){
 	NS_LOG_FUNCTION_NOARGS ();
-		
+	
 	m_nextDelay = CreateObject<ExponentialRandomVariable> ();
-	m_nextDelay->SetAttribute ("Mean", DoubleValue (10));
+	m_nextDelay->SetAttribute ("Mean", DoubleValue (600));
 }
 
 RandomSender::~RandomSender (){
 	NS_LOG_FUNCTION_NOARGS ();
 }
 
-void RandomSender::SetMean (Time mean) {
-  NS_LOG_FUNCTION (this << mean);
-  m_mInterval = mean;
-}
-
-Time RandomSender::GetMean (void) const {
-  NS_LOG_FUNCTION (this);
-  return m_mInterval;
-}
-
 void RandomSender::SetInitialDelay (Time delay){
   NS_LOG_FUNCTION (this << delay);
   m_initialDelay = delay;
+}
+
+void RandomSender::SetMean (double mean){
+  NS_LOG_FUNCTION (this << mean);
+  m_nextDelay->SetAttribute ("Mean", DoubleValue(mean));
 }
 
 void RandomSender::SendPacket (void){
@@ -87,11 +82,9 @@ void RandomSender::SendPacket (void){
 
 	m_mac->Send (packet);
 
-	//m_nextDelay->SetAttribute ("Mean", DoubleValue (m_mInterval.GetSeconds()));
 
     nxtDelay = Seconds(m_nextDelay->GetValue()); 
  	//NS_LOG_DEBUG("nxt: " << nxtDelay.GetSeconds() << " now: " << Simulator::Now().GetSeconds()); 
-	//nxtDelay += Simulator::Now();   
 	NS_LOG_DEBUG ("The next alarm event with a = " <<
                 nxtDelay.GetSeconds() << " Seconds delay");
 	
@@ -113,7 +106,7 @@ void RandomSender::StartApplication (void){
       	NS_ASSERT (m_mac != 0);
     }
 
-  	// Schedule the next SendPacket event
+	// Schedule the next SendPacket event
   	Simulator::Cancel (m_sendEvent);
   	NS_LOG_DEBUG ("Starting up application with a first event with a " <<
      	           m_initialDelay.GetSeconds () << " seconds delay");

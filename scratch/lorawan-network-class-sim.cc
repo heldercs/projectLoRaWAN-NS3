@@ -65,11 +65,11 @@ int appPeriodSeconds = 600;
 //string fileDelay = "./scratch/delay.dat";
 
 
-vector <vector <uint8_t> > totalTxAmounts (3, vector<uint8_t>(MAXRTX, 0));
-
 #if FLGRTX
+vector <vector <uint8_t> > totalTxAmounts (3, vector<uint8_t>(MAXRTX, 0));
 vector<Time> sndTimeDelay;
 vector<uint8_t> statusRtx;
+vector<uint8_t> statusPI;
 #endif
 
 typedef struct _Statistics{
@@ -167,7 +167,7 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
             		case UNDER_SENSITIVITY:
 			        			if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){		
-	      									pktSF[status.sf-7].underSensitivity += 1;
+	      								pktSF[status.sf-7].underSensitivity += 1;
 #if FLGRTX
 										statusRtx[status.senderId] = UNDER_SENSITIVITY;  
 #endif
@@ -240,7 +240,9 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 		sndTimeDelay[status.senderId] = status.sndTime;
 	}
 	//cout << "id: " << systemId << " nRTX: " << (unsigned)status.rtxNum << " T: " << Simulator::Now().GetSeconds() << endl;
-	(totalTxAmounts.at(status.sf-7)).at(MAXRTX-status.rtxNum-1)++;
+	totalTxAmounts.at(status.sf-7).at(MAXRTX-status.rtxNum-1)++;
+	statusPI[status.senderId] = status.rtxNum;
+	//cout << "id: " <<  status.senderId << " pi: " << (unsigned)statusPI[status.senderId] << endl;
 #endif
   	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
 }
@@ -296,7 +298,30 @@ void PrintSimulationTime (void){
   	Simulator::Schedule (Minutes (30), &PrintSimulationTime);
 }
 
+#if FLGRTX
+// Periodically get the PI-éssimo 
+void GetPiMetric (std::string piMetricFile){
+	vector<double> piAmounts (MAXRTX, 0);
+	ofstream myfile;
+  
+  	myfile.open (piMetricFile, ios::out | ios::app);
+	
+	for (int i=0; i<nDevices; i++)
+		piAmounts[MAXRTX-statusPI[i]-1]++;
+	
+	for (int i = 0; i < int(piAmounts.size ()); i++)
+	   	piAmounts[i] /= nDevicesSF[0];
+    
+    for (const auto &e : piAmounts) myfile << e << " ";
+    myfile << "\n" ;
+    myfile.close();
+
+	Simulator::Schedule (Seconds (60), &GetPiMetric, piMetricFile);
+}
+#endif 
+
 void PrintEndDevices (NodeContainer endDevices, NodeContainer gateways, std::string filename){
+	int sf;
   	const char * c = filename.c_str ();
   	std::ofstream spreadingFactorFile;
   	spreadingFactorFile.open (c);
@@ -308,7 +333,7 @@ void PrintEndDevices (NodeContainer endDevices, NodeContainer gateways, std::str
       	Ptr<LoraNetDevice> loraNetDevice = netDevice->GetObject<LoraNetDevice> ();
       	NS_ASSERT (loraNetDevice != 0);
       	Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac> ();
-      	int sf = int(mac->GetSfFromDataRate(mac->GetDataRate ()));
+      	sf = int(mac->GetSfFromDataRate(mac->GetDataRate ()));
 		//NS_LOG_DEBUG("sf: " << sf);
 		nDevicesSF[sf-7] += 1;
 	
@@ -376,6 +401,7 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
 	}
 }/* -----  end of function buildingHandler  ----- */
 
+#if FLGRTX
 /*  
  * ===  FUNCTION  ======================================================================
  *         Name:  sumReTransmission
@@ -384,14 +410,14 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
  */
 int sumReTransmission (uint8_t sf){
     uint8_t total = 0;
-/*    cout << "Matrix Rtx: " << endl;
+    /*cout << "Matrix Rtx: " << endl;
 	for(int i=0; i<3; i++){
     	for (int j = 0; j < int(totalTxAmounts[sf-7].size ()); j++){
       		cout << (unsigned)totalTxAmounts[i][j] << " ";
     	}
 		cout << endl;
-	}
-*/
+	}*/
+
     for (int i = 0; i < int(totalTxAmounts[sf-7].size ()); i++){
       //cout << (unsigned)totalTxAmounts[i] << " ";
       if (i)
@@ -400,7 +426,7 @@ int sumReTransmission (uint8_t sf){
     //cout << endl;
     return(total);
 }       /* -----  end of function printSumTransmission  ----- */
-
+#endif
 
 /* 
  * ===  FUNCTION  ======================================================================
@@ -413,8 +439,8 @@ int main (int argc, char *argv[]){
  	string fileMetric="./TestResult/test";
   	string fileMetric8="./TestResult/test";
   	string fileMetric9="./TestResult/test";
-  	string fileData="./scratch/mac-sta-dat.dat";
- 	string pcapfile="./scratch/mac-s1g-slots";
+  	string fileData="./TestResult/mac-sta-dat.dat";
+ 	string filePiMetric="./TestResult/test";
 	string endDevFile="./TestResult/test";
 	int trial=1, packLoss=0, numRTX=0;
   	uint32_t nSeed=1;
@@ -447,6 +473,7 @@ int main (int argc, char *argv[]){
 			case 4200:	
 #endif					
 					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
+					filePiMetric += to_string(trial) + "/traffic-10/result-pi.dat";
 					break;
 #if FLGRTX
 			case 3500:	
@@ -470,10 +497,13 @@ int main (int argc, char *argv[]){
 	}				/* -----  end switch  ----- */
 
 	ofstream myfile;
-/*  myfile.open (fileDelay, ios::out | ios::app);
+
+#if FLGRTX
+	myfile.open (filePiMetric, ios::out | ios::app);
 	myfile << nDevices << ":\n";
 	myfile.close();
-*/	
+#endif
+
   	// Set up logging
   	//LogComponentEnable ("LoRaWanNetworkSimulator", LOG_LEVEL_ALL);
   	//LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
@@ -624,6 +654,7 @@ int main (int argc, char *argv[]){
 			// initializer sumRtxDelay 
 			sndTimeDelay.push_back(Seconds(0));
 			statusRtx.push_back(0);
+			statusPI.push_back(0);
 #endif
     }
 
@@ -699,12 +730,7 @@ int main (int argc, char *argv[]){
   	*  Set up the end device's spreading factor  *
   	**********************************************/
   	NS_LOG_DEBUG ("Spreading factor");
-
-#if FLGRTX 
-   	macHelper.SetSpreadingFactorsUp (1, endDevices, gateways, channel);
-#else
-  	macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
-#endif
+   	macHelper.SetSpreadingFactorsUp (FLGRTX, endDevices, gateways, channel);
 
   	//macHelper.SetSpreadingFactorsUp (endDevices);
   	/*  uint8_t count=5;
@@ -746,12 +772,12 @@ int main (int argc, char *argv[]){
   	*********************************************/
 
   	Time appStopTime = Seconds(simulationTime);
-  	RandomSenderHelper appHelper = RandomSenderHelper ();
-  	appHelper.SetMean (Seconds (appPeriodSeconds));
-  	ApplicationContainer appContainer = appHelper.Install (endDevices);
-    //PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-    //appHelper.SetPeriod (Seconds (appPeriodSeconds));
-    //ApplicationContainer appContainer = appHelper.Install (endDevices);
+  	//RandomSenderHelper appHelper = RandomSenderHelper ();
+  	//appHelper.SetMean (appPeriodSeconds);
+  	//ApplicationContainer appContainer = appHelper.Install (endDevices);
+    PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
+    appHelper.SetPeriod (Seconds (appPeriodSeconds));
+    ApplicationContainer appContainer = appHelper.Install (endDevices);
 	
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
 	NS_LOG_DEBUG("sTime:" << appStartTime << "  pTime:" << appStopTime);
@@ -762,8 +788,10 @@ int main (int argc, char *argv[]){
    	* Print output files *
    	*********************/
   	if (printEDs){
-    	PrintEndDevices (endDevices, gateways,
-        	               endDevFile);
+    	PrintEndDevices (endDevices, gateways, endDevFile);
+#if FLGRTX
+		Simulator::Schedule (Seconds (60), &GetPiMetric, filePiMetric);
+#endif
 	//	PrintSimulationTime ( );
  	}
 
@@ -787,9 +815,11 @@ int main (int argc, char *argv[]){
 		/***************
 		*  Results sf7 *
 		***************/
+#if FLGRTX
 		numRTX = sumReTransmission(7);
 		NS_LOG_DEBUG("numRTX-SF7: " << numRTX);
-		
+#endif
+
 		throughput = 0;
 		packLoss = pktSF[0].interfered + pktSF[0].noMoreReceivers + pktSF[0].underSensitivity;
 		//throughput = pktSF[0].received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0); // throughput in kilo bits por seconds (kps)
@@ -797,13 +827,13 @@ int main (int argc, char *argv[]){
 
 		probSucc_p = double(pktSF[0].received)/(pktSF[0].sent-numRTX);
 		probSucc_t = double(pktSF[0].received)/pktSF[0].sent;
-		probLoss = (double(packLoss)/(pktSF[0].sent-numRTX))*100;
-		probInte = (double(pktSF[0].interfered)/(pktSF[0].sent-numRTX))*100;
-		probNoMo = (double(pktSF[0].noMoreReceivers)/(pktSF[0].sent-numRTX))*100;
-		probUSen = (double(pktSF[0].underSensitivity)/(pktSF[0].sent-numRTX))*100;
+		probLoss = double(packLoss)/(pktSF[0].sent-numRTX);
+		probInte = double(pktSF[0].interfered)/(pktSF[0].sent-numRTX);
+		probNoMo = double(pktSF[0].noMoreReceivers)/(pktSF[0].sent-numRTX);
+		probUSen = double(pktSF[0].underSensitivity)/(pktSF[0].sent-numRTX);
 
-		probSucc_p = probSucc_p * 100;
-		probSucc_t = probSucc_t * 100;
+		//probSucc_p = probSucc_p * 100;
+		//probSucc_t = probSucc_t * 100;
 	
 		/*	myfile.open (fileDelay, ios::out | ios::app);
 		myfile << "\n\n";
@@ -838,24 +868,26 @@ int main (int argc, char *argv[]){
 		/***************
   		*  Results sf8 *
   		***************/
+#if FLGRTX
  		numRTX = sumReTransmission(8);
 		NS_LOG_DEBUG("numRTX-SF8: " << numRTX);
-		
+#endif
+
 		throughput = 0;
-		packLoss = (pktSF[1].sent-numRTX) - pktSF[1].received;
+		packLoss = pktSF[0].interfered + pktSF[0].noMoreReceivers + pktSF[0].underSensitivity;
 		//throughput = pktSF[1].received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0); // throughput in kilo bits por seconds (kps)
 		throughput = pktSF[1].received / (simulationTime - appStartTime); // throughput in packets por seconds
 
 
 		probSucc_p = double(pktSF[1].received)/(pktSF[1].sent-numRTX);
 		probSucc_t = double(pktSF[1].received)/pktSF[1].sent;
-		probLoss = (double(packLoss)/(pktSF[1].sent-numRTX))*100;
-		probInte = (double(pktSF[1].interfered)/(pktSF[1].sent-numRTX))*100;
-		probNoMo = (double(pktSF[1].noMoreReceivers)/(pktSF[1].sent-numRTX))*100;
-		probUSen = (double(pktSF[1].underSensitivity)/(pktSF[1].sent-numRTX))*100;
+		probLoss = double(packLoss)/(pktSF[1].sent-numRTX);
+		probInte = double(pktSF[1].interfered)/(pktSF[1].sent-numRTX);
+		probNoMo = double(pktSF[1].noMoreReceivers)/(pktSF[1].sent-numRTX);
+		probUSen = double(pktSF[1].underSensitivity)/(pktSF[1].sent-numRTX);
 
-		probSucc_p = probSucc_p * 100;
-		probSucc_t = probSucc_t * 100;
+		//probSucc_p = probSucc_p * 100;
+		//probSucc_t = probSucc_t * 100;
 	
 		/*	myfile.open (fileDelay, ios::out | ios::app);
 		myfile << "\n\n";
@@ -889,24 +921,26 @@ int main (int argc, char *argv[]){
 		/***************
   		*  Results sf9 *
   		***************/
+#if FLGRTX
  		numRTX = sumReTransmission(9);
 		NS_LOG_DEBUG("numRTX-SF9: " << numRTX);
-		
+#endif
+
 		throughput = 0;
-		packLoss = (pktSF[2].sent-numRTX) - pktSF[2].received;
+		packLoss = pktSF[2].interfered + pktSF[2].noMoreReceivers + pktSF[2].underSensitivity;
 		//throughput = pktSF[2].received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0); // throughput in kilo bits por seconds (kps)
 		throughput = pktSF[2].received / (simulationTime - appStartTime); // throughput in packets por seconds
 
 
 		probSucc_p = double(pktSF[2].received)/(pktSF[2].sent-numRTX);
 		probSucc_t = double(pktSF[2].received)/pktSF[2].sent;
-		probLoss = (double(packLoss)/(pktSF[2].sent-numRTX))*100;
-		probInte = (double(pktSF[2].interfered)/(pktSF[2].sent-numRTX))*100;
-		probNoMo = (double(pktSF[2].noMoreReceivers)/(pktSF[2].sent-numRTX))*100;
-		probUSen = (double(pktSF[2].underSensitivity)/(pktSF[2].sent-numRTX))*100;
+		probLoss = double(packLoss)/(pktSF[2].sent-numRTX);
+		probInte = double(pktSF[2].interfered)/(pktSF[2].sent-numRTX);
+		probNoMo = double(pktSF[2].noMoreReceivers)/(pktSF[2].sent-numRTX);
+		probUSen = double(pktSF[2].underSensitivity)/(pktSF[2].sent-numRTX);
 
-		probSucc_p = probSucc_p * 100;
-		probSucc_t = probSucc_t * 100;
+		//probSucc_p = probSucc_p * 100;
+		//probSucc_t = probSucc_t * 100;
 	
 		/*	myfile.open (fileDelay, ios::out | ios::app);
 		myfile << "\n\n";

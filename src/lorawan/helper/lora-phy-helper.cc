@@ -83,12 +83,12 @@ LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
       // We expect that MacHelper instances will overwrite this setting if the
       // device will operate in a different region
       std::vector<double> frequencies;
-/*    frequencies.push_back (867.1);
+      frequencies.push_back (867.1);
       frequencies.push_back (867.3);
       frequencies.push_back (867.5);
       frequencies.push_back (867.7);
       frequencies.push_back (867.9);
-*/    frequencies.push_back (868.1);
+      frequencies.push_back (868.1);
       frequencies.push_back (868.3);
       frequencies.push_back (868.5);
 
