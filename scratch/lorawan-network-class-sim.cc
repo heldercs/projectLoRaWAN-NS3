@@ -50,8 +50,8 @@ using namespace std;
 
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
-#define MAXRTX	4
-#define FLGRTX	0 
+#define MAXRTX	2
+#define FLGRTX	1 
 
 // Network settings
 int nDevices = 2000;
@@ -299,7 +299,7 @@ void PrintSimulationTime (void){
 }
 
 #if FLGRTX
-// Periodically get the PI-éssimo 
+// Periodically get the PI0-éssimo 
 void GetPiMetric (std::string piMetricFile){
 	vector<double> piAmounts (MAXRTX, 0);
 	ofstream myfile;
@@ -311,7 +311,7 @@ void GetPiMetric (std::string piMetricFile){
 	
 	for (int i = 0; i < int(piAmounts.size ()); i++)
 	   	piAmounts[i] /= nDevicesSF[0];
-    
+
     for (const auto &e : piAmounts) myfile << e << " ";
     myfile << "\n" ;
     myfile.close();
@@ -834,21 +834,23 @@ int main (int argc, char *argv[]){
 
 		//probSucc_p = probSucc_p * 100;
 		//probSucc_t = probSucc_t * 100;
-	
+		//cout << sumSf7Delay.GetMilliSeconds() << endl;
+		avgDelay = sumSf7Delay/nDevicesSF[0];
+ 	
 		/*	myfile.open (fileDelay, ios::out | ios::app);
 		myfile << "\n\n";
 		myfile.close();
 		*/
 
-//  		cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
-//   		cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
+  		//cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (ms)" << endl; 
+   		//cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << avgDelay.GetMilliSeconds() << endl;
 
 	  	myfile.open (fileMetric, ios::out | ios::app);
-  		myfile << nDevices << ", " << throughput << ", " << probSucc_p << ", " << probSucc_t  << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen  << "\n";
+  		myfile << nDevices << ", " << throughput << ", " << probSucc_p << ", " << probSucc_t  << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen  << avgDelay << "\n";
   		myfile.close();  
   
 
-/*     		cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+/*    	cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   		cout << "sent:" << pktSF[0].sent << " succ:" << pktSF[0].received << " drop:"<< packLoss << " interf:" << pktSF[0].interfered << " noMoreRec:" << pktSF[0].noMoreReceivers << " underSens:" << pktSF[0].underSensitivity << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
