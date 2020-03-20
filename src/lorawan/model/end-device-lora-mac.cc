@@ -97,7 +97,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   // Initialize the random variable we'll use to decide which channel to
   // transmit on.
   m_expRV = CreateObject<ExponentialRandomVariable> ();
-  m_expRV->SetAttribute ("Mean", DoubleValue (2));
+  m_expRV->SetAttribute ("Mean", DoubleValue (40));
 
   // Void the two receiveWindow events
 //  m_closeWindow = EventId ();

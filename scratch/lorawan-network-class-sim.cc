@@ -66,7 +66,7 @@ int appPeriodSeconds = 600;
 
 
 #if FLGRTX
-vector <vector <uint8_t> > totalTxAmounts (3, vector<uint8_t>(MAXRTX, 0));
+vector <vector <int> > totalTxAmounts (3, vector<int>(MAXRTX, 0));
 vector<Time> sndTimeDelay;
 vector<uint8_t> statusRtx;
 vector<uint8_t> statusPI;
@@ -126,6 +126,38 @@ struct PacketStatus {
 
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
 
+  
+//#if FLGRTX
+/* 
+ * ===  FUNCTION  ======================================================================
+ *         Name:  mStatusPI
+ *  Description: markov chain for Pi 
+ * =====================================================================================
+ */
+/*void mStatusPI (bool probSucc, uint32_t Id, uint8_t rtxStatus){
+	if(probSucc){
+//		if(Id == 16)
+//			cout << "1 id: " << Id << " rtx: " << (unsigned)rtxStatus << " sPI: " << (unsigned)statusPI[Id] << endl;
+		statusPI[Id] = MAXRTX-1;
+	}else{
+		if (!rtxStatus){
+//			cout << "m=0 0 id: " << Id << " rtx: " << (unsigned)rtxStatus << " sPI: " << (unsigned)statusPI[Id] << endl;
+			statusPI[Id] = MAXRTX-1;
+		}else if (rtxStatus == statusPI[Id]){
+//			if (Id == 16)
+//				cout << "0 id: " << Id << " rtx: " << (unsigned)rtxStatus << " sPI: " << (unsigned)statusPI[Id] << endl;
+			statusPI[Id]--;
+		}else if ( rtxStatus > statusPI[Id]){
+			statusPI[Id] = MAXRTX-2;
+		}else{
+		//	if (Id == 16)
+				cout << "diff 0 id: " << Id << " rtx: " << (unsigned)rtxStatus << " sPi: " << (unsigned)statusPI[Id] << endl;
+		}
+	}	
+}		// -----  end of function mStatusPI  ----- 
+#endif
+*/
+
 void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it){
 	// Check whether this packet is received by all gateways	
 	if ((*it).second.outcomeNumber == nGateways){
@@ -158,6 +190,7 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 										sumSf7Delay += status.rcvTime - status.sndTime;
 										NS_LOG_DEBUG("sumDely:" << sumSf7Delay.GetMilliSeconds() << " milliSeconds");
 									}
+//									mStatusPI(1, status.senderId, status.rtxNum);
 #endif
 									pktSF[status.sf - 7].received += 1;
 									status.outFlag++;
@@ -173,6 +206,9 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 #endif
 									}
 									status.outFlag++;
+//#if FLGRTX
+//									mStatusPI(0, status.senderId, status.rtxNum);
+//#endif
 								}
 			           	   		NS_LOG_DEBUG("under_sensitivity: " << pktSF[status.sf-7].underSensitivity);
            						break;
@@ -185,9 +221,12 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 #endif
 									}
 									status.outFlag++;
+//#if FLGRTX
+//									mStatusPI(0, status.senderId, status.rtxNum);
+//#endif
 								}
 				           	   	NS_LOG_DEBUG("no_more_receivers: " << pktSF[status.sf-7].noMoreReceivers << " snt: " << pktSF[status.sf-7].sent);	
-             					break;
+            					break;
             		case INTERFERED:
 			 	      			if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){		
@@ -197,9 +236,12 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 #endif
 									}
 									status.outFlag++;
+//#if FLGRTX
+//									mStatusPI(0, status.senderId, status.rtxNum);
+//#endif
 								}
 					           	NS_LOG_DEBUG("interfe: " << pktSF[status.sf-7].interfered << " snt: " << pktSF[status.sf-7].sent);
-           						break;
+         						break;
             		case UNSET:
                 				break;
 	    			default:
@@ -240,9 +282,8 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 		sndTimeDelay[status.senderId] = status.sndTime;
 	}
 	//cout << "id: " << systemId << " nRTX: " << (unsigned)status.rtxNum << " T: " << Simulator::Now().GetSeconds() << endl;
-	totalTxAmounts.at(status.sf-7).at(MAXRTX-status.rtxNum-1)++;
-	statusPI[status.senderId] = status.rtxNum;
-	//cout << "id: " <<  status.senderId << " pi: " << (unsigned)statusPI[status.senderId] << endl;
+	totalTxAmounts.at(status.sf-7).at(MAXRTX-status.rtxNum-1) += 1;
+	statusPI[systemId] = status.rtxNum;
 #endif
   	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
 }
@@ -303,20 +344,43 @@ void PrintSimulationTime (void){
 void GetPiMetric (std::string piMetricFile){
 	vector<double> piAmounts (MAXRTX, 0);
 	ofstream myfile;
-  
+  	Time aTime, rTime;
+
   	myfile.open (piMetricFile, ios::out | ios::app);
 	
-	for (int i=0; i<nDevices; i++)
-		piAmounts[MAXRTX-statusPI[i]-1]++;
+	for (int i=0; i<nDevices; i++){
+	//	cout << (unsigned)statusPI[i] << " ";
+		piAmounts[MAXRTX-statusPI[i]-1] += 1;
+	}
+	//cout << endl;
 	
-	for (int i = 0; i < int(piAmounts.size ()); i++)
-	   	piAmounts[i] /= nDevicesSF[0];
-
+	for (int i = 0; i < int(piAmounts.size ()); i++){
+		//cout << "i: " << i << " " <<  piAmounts[i] << " ";
+	   	piAmounts[i] /= nDevices;
+	//	cout << piAmounts[i] << " ";
+	}
+	//cout << endl;
+  	
+	/*  cout << "pi "; 
+	for (int i=0; i<int(piAmounts.size()); i++)
+		cout << piAmounts[i] << " ";
+	cout << endl;
+*/
     for (const auto &e : piAmounts) myfile << e << " ";
     myfile << "\n" ;
     myfile.close();
-
-	Simulator::Schedule (Seconds (60), &GetPiMetric, piMetricFile);
+	
+	aTime = Simulator::Now();
+	rTime = Seconds(simulationTime);
+	//cout << "aT: " << aTime.GetSeconds() << " rT: " << rTime.GetSeconds() << endl;
+	if (aTime.GetSeconds() < rTime.GetSeconds() )
+		Simulator::Schedule (Seconds (100), &GetPiMetric, piMetricFile);
+	/*else{
+		for (int i=0; i<int(piAmounts.size()); i++)
+			cout << piAmounts[i] << " ";
+		cout << endl;
+	}*/
+		
 }
 #endif 
 
@@ -409,15 +473,15 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
  * =====================================================================================
  */
 int sumReTransmission (uint8_t sf){
-    uint8_t total = 0;
-    /*cout << "Matrix Rtx: " << endl;
+    int total = 0;
+/*     cout << "Matrix Rtx: " << endl;
 	for(int i=0; i<3; i++){
     	for (int j = 0; j < int(totalTxAmounts[sf-7].size ()); j++){
-      		cout << (unsigned)totalTxAmounts[i][j] << " ";
+      		cout << totalTxAmounts[i][j] << " ";
     	}
 		cout << endl;
-	}*/
-
+	}
+*/
     for (int i = 0; i < int(totalTxAmounts[sf-7].size ()); i++){
       //cout << (unsigned)totalTxAmounts[i] << " ";
       if (i)
@@ -472,25 +536,25 @@ int main (int argc, char *argv[]){
 #else
 			case 4200:	
 #endif					
-					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
-					filePiMetric += to_string(trial) + "/traffic-10/result-pi.dat";
+					fileMetric += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF7.dat";
+					filePiMetric += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-pi.dat";
 					break;
 #if FLGRTX
 			case 3500:	
 #else
 			case 4900:	
 #endif					
-					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
-					fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
+					fileMetric += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF7.dat";
+					fileMetric8 += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF8.dat";
 					break;
 #if FLGRTX
 			case 4200:	
 #else
 			case 5600:	
 #endif					
-					fileMetric += to_string(trial) + "/traffic-10/result-STAs-SF7.dat";
-					fileMetric8 += to_string(trial) + "/traffic-10/result-STAs-SF8.dat";
-					fileMetric9 += to_string(trial) + "/traffic-10/result-STAs-SF9.dat";
+					fileMetric += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF7.dat";
+					fileMetric8 += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF8.dat";
+					fileMetric9 += to_string(trial) + "/traffic-" + to_string(appPeriodSeconds) + "/result-STAs-SF9.dat";
 					break;
 			default:	
 					break;
@@ -615,7 +679,7 @@ int main (int argc, char *argv[]){
   	Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
 
   	// Make it so that nodes are at a certain height > 0
-  	//double x=4300.0, y=0.0;
+  	//double x=1637.98, y=-219.815;
   	for (NodeContainer::Iterator j = endDevices.Begin ();
     	j != endDevices.End (); ++j){
       	Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
@@ -654,7 +718,7 @@ int main (int argc, char *argv[]){
 			// initializer sumRtxDelay 
 			sndTimeDelay.push_back(Seconds(0));
 			statusRtx.push_back(0);
-			statusPI.push_back(0);
+			statusPI.push_back(MAXRTX-1);
 #endif
     }
 
@@ -772,12 +836,12 @@ int main (int argc, char *argv[]){
   	*********************************************/
 
   	Time appStopTime = Seconds(simulationTime);
-  	//RandomSenderHelper appHelper = RandomSenderHelper ();
-  	//appHelper.SetMean (appPeriodSeconds);
-  	//ApplicationContainer appContainer = appHelper.Install (endDevices);
-    PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-    appHelper.SetPeriod (Seconds (appPeriodSeconds));
-    ApplicationContainer appContainer = appHelper.Install (endDevices);
+  	RandomSenderHelper appHelper = RandomSenderHelper ();
+  	appHelper.SetMean (appPeriodSeconds);
+  	ApplicationContainer appContainer = appHelper.Install (endDevices);
+    //PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
+    //appHelper.SetPeriod (Seconds (appPeriodSeconds));
+    //ApplicationContainer appContainer = appHelper.Install (endDevices);
 	
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
 	NS_LOG_DEBUG("sTime:" << appStartTime << "  pTime:" << appStopTime);
@@ -790,7 +854,7 @@ int main (int argc, char *argv[]){
   	if (printEDs){
     	PrintEndDevices (endDevices, gateways, endDevFile);
 #if FLGRTX
-		Simulator::Schedule (Seconds (60), &GetPiMetric, filePiMetric);
+		Simulator::Schedule (appPeriod, &GetPiMetric, filePiMetric);
 #endif
 	//	PrintSimulationTime ( );
  	}
@@ -806,7 +870,7 @@ int main (int argc, char *argv[]){
 	//cout << "init Time:" << endl;
   	Simulator::Run ();
   	Simulator::Destroy ();
-  	//cout << "Real time: " << std::time (0) - oldtime << " seconds" << endl;
+  	//cout << "Real time: " << time (0) - oldtime << " seconds" << endl;
   	/*****************************************
   	*  Statistics Results for regular event  *
   	*****************************************/
@@ -818,13 +882,14 @@ int main (int argc, char *argv[]){
 #if FLGRTX
 		numRTX = sumReTransmission(7);
 		NS_LOG_DEBUG("numRTX-SF7: " << numRTX);
+		//cout << "numRTX-SF7: " << numRTX << endl;
 #endif
 
 		throughput = 0;
 		packLoss = pktSF[0].interfered + pktSF[0].noMoreReceivers + pktSF[0].underSensitivity;
 		//throughput = pktSF[0].received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0); // throughput in kilo bits por seconds (kps)
 		throughput = pktSF[0].received / (simulationTime - appStartTime); // throughput in packets por seconds
-
+		//cout << "rec: " << pktSF[0].received << " sent: " << pktSF[0].sent << endl; 
 		probSucc_p = double(pktSF[0].received)/(pktSF[0].sent-numRTX);
 		probSucc_t = double(pktSF[0].received)/pktSF[0].sent;
 		probLoss = double(packLoss)/(pktSF[0].sent-numRTX);
@@ -842,8 +907,8 @@ int main (int argc, char *argv[]){
 		myfile.close();
 		*/
 
-  		//cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (ms)" << endl; 
-   		//cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << avgDelay.GetMilliSeconds() << endl;
+  		//cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (s)" << endl; 
+   		//cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << avgDelay.GetSeconds() << endl;
 
 	  	myfile.open (fileMetric, ios::out | ios::app);
   		myfile << nDevices << ", " << throughput << ", " << probSucc_p << ", " << probSucc_t  << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen  << avgDelay << "\n";
@@ -896,8 +961,8 @@ int main (int argc, char *argv[]){
 		myfile.close();
 		*/	
 
-//  		cout << endl << "nDevices8" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
-//   		cout << "  " << nDevicesSF[1] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
+  		//cout << endl << "nDevices8" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << endl; 
+   		//cout << "  " << nDevicesSF[1] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << endl;
 
   		myfile.open (fileMetric8, ios::out | ios::app);
   		myfile << nDevices << ", " << throughput << ", " << probSucc_p << ", " << probSucc_t << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen << "\n";
