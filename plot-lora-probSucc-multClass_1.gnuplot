@@ -19,10 +19,10 @@ set key reverse vertical right
 #set multiplot
 
 # Filename of the data
-filename='./TestResult/result-multClass_1-SF7.dat'
-filename1='./TestResult/result-multClass_1-SF8.dat'
-filename2='./TestResult/result-multClass_1_2-SF7.dat'
-filename3='./TestResult/result-multClass_1_2-SF8.dat'
+filename='./TestResult/result-multClass_m0.dat'
+filename1='./TestResult/result-multClass_m1.dat'
+#filename2='./TestResult/result-multClass_1_2-SF7.dat'
+#filename3='./TestResult/result-multClass_1_2-SF8.dat'
 #filename4='./TestResult/result-multClass_2_2-SF8.dat'
 #filename5='./TestResult/result-multClass_2_2-SF9.dat'
 #filename6='~/Doutorado/projectLoRa/result_OpenField_2GW/test36/traffic-600/result-regSTAs.dat'
@@ -33,9 +33,7 @@ filename3='./TestResult/result-multClass_1_2-SF8.dat'
 # Plot the data
 #plot filename using 1:3 w lp lw 4 t 'SF = 7', filename1 using 1:3 w lp lw 4 t 'SF = 8', filename2 using 1:3 w lp lw 4 t 'SF = 9'
 #plot filename using 1:3 w lp lw 4 t 'SF = 7', filename1 using 1:3 w lp lw 4 t 'SF = 8'
-plot filename using 1:3 w lp lw 4 t 'SF = 7', filename1 using 1:3 w lp lw 4 t 'SF = 8', filename2 using 1:3 w lp lw 4 t 'SF = 7_2', filename3 using 1:3 w lp lw 4 t 'SF = 8_2'
-
-
+plot filename using 1:3 w lp lw 4 t 'm = 0', filename1 using 1:3 w lp lw 4 t 'm = 1'
 
 
 

@@ -68,7 +68,7 @@ int appPeriodSeconds = 600;
 #if FLGRTX
 vector <vector <int> > totalTxAmounts (3, vector<int>(MAXRTX, 0));
 vector<Time> sndTimeDelay;
-vector<uint8_t> statusRtx;
+vector<int> statusRtx;
 vector<uint8_t> statusPI;
 #endif
 
@@ -155,8 +155,19 @@ std::map<Ptr<Packet const>, PacketStatus> packetTracker;
 		}
 	}	
 }		// -----  end of function mStatusPI  ----- 
+
+
+void printReTransmission (uint8_t sf){
+    cout << "Matrix Rtx: " << endl;
+	for(int i=0; i<3; i++){
+    	for (int j = 0; j < int(totalTxAmounts[sf-7].size ()); j++){
+      		cout << totalTxAmounts[i][j] << " ";
+    	}
+		cout << endl;
+	}
+}       // -----  end of function printSumTransmission  -----
 #endif
-*/
+*/ 
 
 void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it){
 	// Check whether this packet is received by all gateways	
@@ -175,8 +186,10 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 												case INTERFERED:
 														pktSF[status.sf-7].interfered -= 1;
 														break;
-												case NO_MORE_RECEIVERS:	
+												case NO_MORE_RECEIVERS:
+														//cout << "nRec: " << pktSF[status.sf-7].noMoreReceivers << endl;	
 														pktSF[status.sf-7].noMoreReceivers -= 1;
+														//cout << "nRec: " << pktSF[status.sf-7].noMoreReceivers << endl;	
 														break;
 												case UNDER_SENSITIVITY:	
 														pktSF[status.sf-7].underSensitivity -= 1;
@@ -195,8 +208,10 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 									pktSF[status.sf - 7].received += 1;
 									status.outFlag++;
 								}
-	           	   				NS_LOG_DEBUG("sf: " << (unsigned)status.sf << "receiver: " << pktSF[status.sf-7].received);
-            					break;
+	           	   				NS_LOG_DEBUG("id: " << status.senderId << " sf: " << (unsigned)status.sf << "receiver: " << pktSF[status.sf-7].received);
+//        					    if (status.senderId ==  22)
+//									cout << "id: " << status.senderId << " receiver: " << pktSF[status.sf-7].received<< " snt: " << pktSF[status.sf-7].sent << endl;
+         					break;
             		case UNDER_SENSITIVITY:
 			        			if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){		
@@ -210,8 +225,10 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 //									mStatusPI(0, status.senderId, status.rtxNum);
 //#endif
 								}
-			           	   		NS_LOG_DEBUG("under_sensitivity: " << pktSF[status.sf-7].underSensitivity);
-           						break;
+			           	   		NS_LOG_DEBUG("id: " << status.senderId << " under_sensitivity: " << pktSF[status.sf-7].underSensitivity);
+//       					        if (status.senderId ==  22)
+//									cout << "id: " << status.senderId << " under_sensitivity: " << pktSF[status.sf-7].underSensitivity << " snt: " << pktSF[status.sf-7].sent << endl;
+        						break;
             		case NO_MORE_RECEIVERS:
 								if (!status.outFlag){
 									if(!status.rtxFlag || status.rtxNum == MAXRTX-1){	
@@ -225,7 +242,9 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 //									mStatusPI(0, status.senderId, status.rtxNum);
 //#endif
 								}
-				           	   	NS_LOG_DEBUG("no_more_receivers: " << pktSF[status.sf-7].noMoreReceivers << " snt: " << pktSF[status.sf-7].sent);	
+				           	   	NS_LOG_DEBUG("id: " << status.senderId << " no_more_receivers: " << pktSF[status.sf-7].noMoreReceivers << " snt: " << pktSF[status.sf-7].sent);	
+//     					        if (status.senderId ==  22)
+//									cout << "id: " << status.senderId << " no_more_receivers: " << pktSF[status.sf-7].noMoreReceivers << " snt: " << pktSF[status.sf-7].sent << endl;
             					break;
             		case INTERFERED:
 			 	      			if (!status.outFlag){
@@ -240,12 +259,16 @@ void CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::
 //									mStatusPI(0, status.senderId, status.rtxNum);
 //#endif
 								}
-					           	NS_LOG_DEBUG("interfe: " << pktSF[status.sf-7].interfered << " snt: " << pktSF[status.sf-7].sent);
+					           	NS_LOG_DEBUG("id: " << status.senderId << " interfe: " << pktSF[status.sf-7].interfered << " snt: " << pktSF[status.sf-7].sent);
+//    					        if (status.senderId ==  22)
+//									cout << "id: " << status.senderId << " interfe: " << pktSF[status.sf-7].interfered << " snt: " << pktSF[status.sf-7].sent << endl;
          						break;
             		case UNSET:
+								cout << "unset" << endl;
                 				break;
 	    			default:
-	 							break;
+								cout << "default" << endl;
+     							break;
             }
         }
       	// Remove the packet from the tracker
@@ -272,7 +295,9 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 	status.duration = LoraPhy::GetOnAirTime (packet, txParams);
 	pktSF[status.sf-7].sent += 1;
 	 	
-	NS_LOG_DEBUG("Regular sf:" << (unsigned)txParams.sf << " sndTime: " << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);	
+	NS_LOG_DEBUG("Regular sf:" << (unsigned)txParams.sf << " sent: " << pktSF[status.sf-7].sent << " sndTime: " << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft);
+//	if (systemId == 22)
+//		cout << "Regular sf:" << (unsigned)txParams.sf << " sent: " << pktSF[status.sf-7].sent << " sndTime: " << status.sndTime.GetMilliSeconds() << " num:" << (unsigned)txParams.retxLeft << endl;
 
 #if FLGRTX
 	if (status.rtxFlag && status.sndTime != Seconds(0)){
@@ -282,7 +307,10 @@ void TransmissionCallback (Ptr<Packet> packet, LoraTxParameters txParams, uint32
 		sndTimeDelay[status.senderId] = status.sndTime;
 	}
 	//cout << "id: " << systemId << " nRTX: " << (unsigned)status.rtxNum << " T: " << Simulator::Now().GetSeconds() << endl;
-	totalTxAmounts.at(status.sf-7).at(MAXRTX-status.rtxNum-1) += 1;
+	
+	totalTxAmounts.at(status.sf-7).at(MAXRTX-status.rtxNum-1)++;
+//	if(systemId == 22)
+//		printReTransmission(7);
 	statusPI[systemId] = status.rtxNum;
 #endif
   	packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
@@ -474,14 +502,15 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
  */
 int sumReTransmission (uint8_t sf){
     int total = 0;
-/*     cout << "Matrix Rtx: " << endl;
+    
+	/*cout << "Matrix Rtx: " << endl;
 	for(int i=0; i<3; i++){
     	for (int j = 0; j < int(totalTxAmounts[sf-7].size ()); j++){
       		cout << totalTxAmounts[i][j] << " ";
     	}
 		cout << endl;
-	}
-*/
+	}*/
+	
     for (int i = 0; i < int(totalTxAmounts[sf-7].size ()); i++){
       //cout << (unsigned)totalTxAmounts[i] << " ";
       if (i)
@@ -882,13 +911,13 @@ int main (int argc, char *argv[]){
 #if FLGRTX
 		numRTX = sumReTransmission(7);
 		NS_LOG_DEBUG("numRTX-SF7: " << numRTX);
-		//cout << "numRTX-SF7: " << numRTX << endl;
+		//cout << "numRTX: " << numRTX << endl;
 #endif
 
 		throughput = 0;
 		packLoss = pktSF[0].interfered + pktSF[0].noMoreReceivers + pktSF[0].underSensitivity;
 		//throughput = pktSF[0].received * 28 * 8 / ((simulationTime - appStartTime) * 1000.0); // throughput in kilo bits por seconds (kps)
-		throughput = pktSF[0].received / (simulationTime - appStartTime); // throughput in packets por seconds
+		throughput = pktSF[0].received / (simulationTime - appStartTime); // throughput in packets per seconds
 		//cout << "rec: " << pktSF[0].received << " sent: " << pktSF[0].sent << endl; 
 		probSucc_p = double(pktSF[0].received)/(pktSF[0].sent-numRTX);
 		probSucc_t = double(pktSF[0].received)/pktSF[0].sent;
@@ -907,15 +936,15 @@ int main (int argc, char *argv[]){
 		myfile.close();
 		*/
 
-  		//cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (s)" << endl; 
-   		//cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << avgDelay.GetSeconds() << endl;
+//  		cout << endl << "nDevices7" << ", " << "throughput" << ", " << "probSucc_p" << ", " << "probSucc_t" << ", " << "probLoss" << ", " << "probInte" << ", " << "probNoRec" << ", " << "probUSen" << ", " << "avgDelay (s)" << endl; 
+//   		cout << "  " << nDevicesSF[0] << ",     " << throughput << ",     " << probSucc_p << ",     " << probSucc_t << ",     " << probLoss << ",    " << probInte << ", " << probNoMo << ", " << probUSen << avgDelay.GetSeconds() << endl;
 
 	  	myfile.open (fileMetric, ios::out | ios::app);
   		myfile << nDevices << ", " << throughput << ", " << probSucc_p << ", " << probSucc_t  << ", " <<  probLoss << ", " << probInte << ", " << probNoMo << ", " << probUSen  << avgDelay << "\n";
   		myfile.close();  
   
 
-/*    	cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+/*     	cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   		cout << "sent:" << pktSF[0].sent << " succ:" << pktSF[0].received << " drop:"<< packLoss << " interf:" << pktSF[0].interfered << " noMoreRec:" << pktSF[0].noMoreReceivers << " underSens:" << pktSF[0].underSensitivity << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;

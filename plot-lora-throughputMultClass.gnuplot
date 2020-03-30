@@ -7,9 +7,9 @@ set term postscript eps color blacktext "FreeSans-Bold" 10
 set grid
 set key box lt -1 lw 2
 set xtics 500
-set xrange [400:2100]
+set xrange [100:2100]
 set xtics font ",10"
-set yrange [0:15]
+set yrange [0:30]
 set ytics font ",10"
 set ylabel "Throughput (Kbps)" font "Times-Roman-Bold,16"
 set xlabel "# endNodes" font "times-Roman-Bold,16"
@@ -21,9 +21,9 @@ set key reverse vertical right
 set multiplot
 
 # Filename of the data
-filename='TestResult/result-multClass_2-SF7.dat'
-filename1='TestResult/result-multClass_2-SF8.dat'
-filename2='TestResult/result-multClass_2-SF9.dat'
+filename='TestResult/result-multClass_m0.dat'
+filename1='TestResult/result-multClass_m1.dat'
+#filename2='TestResult/result-multClass_2-SF9.dat'
 #filename3='TestResult/result-multClass_2_2-SF7.dat'
 #filename4='TestResult/result-multClass_2_2-SF8.dat'
 #filename5='TestResult/result-multClass_2_2-SF9.dat'
@@ -39,7 +39,7 @@ filename2='TestResult/result-multClass_2-SF9.dat'
 #plot filename using 1:2 w lp lw 4 t 'Regular whitout alarm', filename1 using 1:2 w lp lw 4 t 'Regular with alarm: a-i', filename2 using 1:2 w lp lw 4 t 'Regular with alarm: a-ii', filename3 using 1:2 w lp lw 4 t 'Regular with alarm: a-iii', filename4 using 1:2 w lp lw 4 t 'Regular with alarm: b-i', filename5 using 1:2 w lp lw 4 t 'Regular with alarm: b-ii', filename6 using 1:2 w lp lw 4 t 'Regular with alarm: b-iii', filename7 using 1:2 w lp lw 4 t 'Regular with alarm: c-i', filename8 using 1:2 w lp lw 4 t 'Regular with alarm: c-ii', filename9 using 1:2 w lp lw 4 t 'Regular with alarm: c-iii'
 
 #plot filename using 1:2 w lp lw 4 t 'sf-7', filename1 using 1:2 w lp lw 4 t 'sf-8', filename2 using 1:2 w lp lw 4 t 'sf-9'
-plot filename using 1:2 w lp lw 4 t 'SF = 7', filename1 using 1:2 w lp lw 4 t 'SF = 8', filename2 using 1:2 w lp lw 4 t 'SF = 9'
+plot filename using 1:2 w lp lw 4 t 'm = 0', filename1 using 1:2 w lp lw 4 t 'm = 1'
 
 
 

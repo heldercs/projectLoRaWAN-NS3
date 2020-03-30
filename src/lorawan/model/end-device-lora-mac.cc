@@ -97,7 +97,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   // Initialize the random variable we'll use to decide which channel to
   // transmit on.
   m_expRV = CreateObject<ExponentialRandomVariable> ();
-  m_expRV->SetAttribute ("Mean", DoubleValue (40));
+  m_expRV->SetAttribute ("Mean", DoubleValue (2));
 
   // Void the two receiveWindow events
 //  m_closeWindow = EventId ();
@@ -626,11 +626,11 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
         NS_LOG_DEBUG ("id: " << m_device->GetNode()->GetId() << " No reception initiated by PHY: rescheduling transmission.");
         if (m_retxParams.retxLeft > 0 ){
             NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
-			nxtRtx = Seconds(m_expRV->GetValue());
-			NS_LOG_DEBUG("nxtRtx:" << nxtRtx);
-        	postponeTransmission (nxtRtx, m_retxParams.packet);
+			//nxtRtx = Seconds(m_expRV->GetValue());
+			//NS_LOG_DEBUG("nxtRtx:" << nxtRtx);
+        	//postponeTransmission (nxtRtx, m_retxParams.packet);
 			
-            //this->Send (m_retxParams.packet);
+            this->Send (m_retxParams.packet);
           }else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX){
             uint8_t txs = m_maxNumTx - (m_retxParams.retxLeft);
             m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
@@ -667,7 +667,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     NS_LOG_DEBUG ("lungh lista " << logicalChannels.size ());
 
     Time waitingTime = Time::Max ();
-	NS_LOG_DEBUG("wTime: " << waitingTime);
+//	NS_LOG_DEBUG("wTime: " << waitingTime);
 
     // Try every channel
     std::vector<Ptr<LogicalLoraChannel> >::iterator it;

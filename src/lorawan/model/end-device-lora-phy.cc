@@ -173,17 +173,23 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
     // it.
     case SLEEP:
       {
-        NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
+//  		if (m_device->GetNode ()->GetId () == 22)
+//			std::cout << "Dropping packet device is sleep state" << std::endl;        
+		NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
         break;
       }
     case TX:
       {
-        NS_LOG_INFO ("Dropping packet because device is in TX state");
+//   		if (m_device->GetNode ()->GetId () == 22)
+//			std::cout << "Dropping packet because is in TX state" << std::endl;        
+	       NS_LOG_INFO ("Dropping packet because device is in TX state");
         break;
       }
     case RX:
       {
-        NS_LOG_INFO ("Dropping packet because device is already in RX state");
+//    		if (m_device->GetNode ()->GetId () == 22)
+//			std::cout << "Dropping packet because is already in RX state" << std::endl;        
+	      NS_LOG_INFO ("Dropping packet because device is already in RX state");
         break;
       }
     // If we are in STANDBY mode, we can potentially lock on the currently
@@ -206,7 +212,9 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
         //////////////////
         if (!IsOnFrequency (frequencyMHz))
           {
-            NS_LOG_INFO ("Packet lost because it's on frequency " <<
+//     		if (m_device->GetNode ()->GetId () == 22)
+//				std::cout << "Packet lost because it's on frequency deferente" << std::endl;        
+	         NS_LOG_INFO ("Packet lost because it's on frequency " <<
                          frequencyMHz << " MHz and we are listening at " <<
                          m_frequency << " MHz");
 
@@ -227,7 +235,9 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
         /////////////////////////
         if (sf != m_sf)
           {
-            NS_LOG_INFO ("Packet lost because it's using SF" << unsigned(sf) <<
+//      		if (m_device->GetNode ()->GetId () == 22)
+//				std::cout << "Packet lost because it's using diferente SF" << std::endl;        
+	        NS_LOG_INFO ("Packet lost because it's using SF" << unsigned(sf) <<
                          ", while we are listening for SF" << unsigned(m_sf));
 
             // Fire the trace source for this event.
@@ -247,7 +257,9 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
         ////////////////////
         if (rxPowerDbm < sensitivity)
           {
-            NS_LOG_INFO ("Dropping packet reception of packet with sf = " <<
+//        	if (m_device->GetNode ()->GetId () == 22)
+//				std::cout << "Dropping packet reception of packet with sf: " << unsigned(sf) << " beacause under the sensitivity of"<< std::endl;        
+	   		NS_LOG_INFO ("Dropping packet reception of packet with sf = " <<
                          unsigned(sf) << " because under the sensitivity of " <<
                          sensitivity << " dBm");
 
@@ -268,6 +280,7 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
         ///////////////////////////////////
         if (canLockOnPacket)
           {
+
             // Switch to RX state
             // EndReceive will handle the switch back to STANDBY state
             SwitchToRx ();
@@ -275,7 +288,9 @@ EndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
             // Schedule the end of the reception of the packet
             NS_LOG_INFO ("Scheduling reception of a packet. End in " <<
                          duration.GetSeconds () << " seconds");
-
+//	  		if (m_device->GetNode ()->GetId () == 22)
+//				std::cout << "Scheduling reception of a packet. end in " << duration.GetSeconds() << " Seconds" << std::endl;        
+	
             Simulator::Schedule (duration, &LoraPhy::EndReceive, this, packet,
                                  event);
 
@@ -297,12 +312,15 @@ EndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
 
   // Call the LoraInterferenceHelper to determine whether there was destructive
   // interference on this event.
-  bool packetDestroyed = m_interference.IsDestroyedByInterference (event);
+  //bool packetDestroyed = m_interference.IsDestroyedByInterference (event);
+  bool packetDestroyed = 0;
 
   // Fire the trace source if packet was destroyed
   if (packetDestroyed)
     {
-      NS_LOG_INFO ("Packet destroyed by interference");
+// 	  	if (m_device->GetNode ()->GetId () == 22)
+//			std::cout << "Packet destroyed by interference" << std::endl;        
+	     NS_LOG_INFO ("Packet destroyed by interference");
 
       if (m_device)
         {
@@ -316,7 +334,9 @@ EndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
     }
   else
     {
-      NS_LOG_INFO ("Packet received correctly");
+// 	  	if (m_device->GetNode ()->GetId () == 22)
+//			std::cout << "Packet received correctly" << std::endl;        
+	     NS_LOG_INFO ("Packet received correctly");
 
       if (m_device)
         {
