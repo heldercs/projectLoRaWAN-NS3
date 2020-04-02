@@ -97,7 +97,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   // Initialize the random variable we'll use to decide which channel to
   // transmit on.
   m_expRV = CreateObject<ExponentialRandomVariable> ();
-  m_expRV->SetAttribute ("Mean", DoubleValue (2));
+  m_expRV->SetAttribute ("Mean", DoubleValue (40));
 
   // Void the two receiveWindow events
 //  m_closeWindow = EventId ();
@@ -141,6 +141,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       return;
     }
 */
+
   // Check that payload length is below the allowed maximum
   if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate))
     {
@@ -171,13 +172,15 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
             netxTxDelay = netxTxDelay + Seconds (ack_timeout);
           }
 		NS_LOG_DEBUG("nxtDelay:" << netxTxDelay);
+    	std::cout << "rtx: " << (unsigned)m_retxParams.retxLeft << " nxtDelay:" << netxTxDelay << std::endl;
         postponeTransmission (netxTxDelay, packet);
       }
 
   // Pick a channel on which to transmit the packet
-  Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
-
-  if (txChannel && m_retxParams.retxLeft > 0 ){ // Proceed with transmission
+  Ptr<LogicalLoraChannel> txChannel = GetChannelForTx (); 
+  //std::cout << "txChannel: " << txChannel->GetFrequency() << " rtx: " << (unsigned)m_retxParams.retxLeft <<std::endl;
+//  if (txChannel && m_retxParams.retxLeft > 0 ){ // Proceed with transmission
+   if (txChannel){ // Proceed with transmission
   	// Checking if this is the transmission of a new packet
     if (packet != m_retxParams.packet){
       	/////////////////////////////////////////////////////////
@@ -289,7 +292,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 void
 EndDeviceLoraMac::postponeTransmission (Time netxTxDelay, Ptr<Packet> packet)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this); 
   // Delete previously scheduled transmissions if any.
   Simulator::Cancel (m_nextTx);
   m_nextTx = Simulator::Schedule (netxTxDelay, &EndDeviceLoraMac::Send, this, packet);

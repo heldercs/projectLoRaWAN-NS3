@@ -51,7 +51,7 @@ using namespace std;
 NS_LOG_COMPONENT_DEFINE ("LoRaWanNetworkSimulator");
 
 #define MAXRTX	2
-#define FLGRTX	1 
+#define FLGRTX	1
 
 // Network settings
 int nDevices = 2000;
@@ -503,14 +503,14 @@ void buildingHandler ( NodeContainer endDevices, NodeContainer gateways ){
 int sumReTransmission (uint8_t sf){
     int total = 0;
     
-	/*cout << "Matrix Rtx: " << endl;
+/*  	cout << "Matrix Rtx: " << endl;
 	for(int i=0; i<3; i++){
     	for (int j = 0; j < int(totalTxAmounts[sf-7].size ()); j++){
       		cout << totalTxAmounts[i][j] << " ";
     	}
 		cout << endl;
-	}*/
-	
+	}
+*/	
     for (int i = 0; i < int(totalTxAmounts[sf-7].size ()); i++){
       //cout << (unsigned)totalTxAmounts[i] << " ";
       if (i)
@@ -865,12 +865,12 @@ int main (int argc, char *argv[]){
   	*********************************************/
 
   	Time appStopTime = Seconds(simulationTime);
-  	RandomSenderHelper appHelper = RandomSenderHelper ();
-  	appHelper.SetMean (appPeriodSeconds);
-  	ApplicationContainer appContainer = appHelper.Install (endDevices);
-    //PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-    //appHelper.SetPeriod (Seconds (appPeriodSeconds));
-    //ApplicationContainer appContainer = appHelper.Install (endDevices);
+  	//RandomSenderHelper appHelper = RandomSenderHelper ();
+  	//appHelper.SetMean (appPeriodSeconds);
+  	//ApplicationContainer appContainer = appHelper.Install (endDevices);
+    PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
+    appHelper.SetPeriod (Seconds (appPeriodSeconds));
+    ApplicationContainer appContainer = appHelper.Install (endDevices);
 	
 	uint32_t appStartTime = Simulator::Now().GetSeconds ();
 	NS_LOG_DEBUG("sTime:" << appStartTime << "  pTime:" << appStopTime);
@@ -892,7 +892,7 @@ int main (int argc, char *argv[]){
   	*  Simulation  *
   	****************/
 
-  	Simulator::Stop (appStopTime + Hours(1));
+  	Simulator::Stop (appStopTime + Hours(2));
 
   	//PrintSimulationTime ();
   	//oldtime = time (0);
@@ -944,7 +944,7 @@ int main (int argc, char *argv[]){
   		myfile.close();  
   
 
-/*     	cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
+/*      	cout << endl << "numDev7:" << nDevicesSF[0] << " numGW:" << nGateways << " simTime:" << simulationTime << " throughput:" << throughput << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
   		cout << "sent:" << pktSF[0].sent << " succ:" << pktSF[0].received << " drop:"<< packLoss << " interf:" << pktSF[0].interfered << " noMoreRec:" << pktSF[0].noMoreReceivers << " underSens:" << pktSF[0].underSensitivity << endl;
   		cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
