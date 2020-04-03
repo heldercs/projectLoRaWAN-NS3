@@ -161,7 +161,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     // If it is not possible to transmit now because of the duty cycle,
     // or because we are receiving, schedule a tx/retx later
 
-    Time netxTxDelay = GetNextTransmissionDelay ();
+    //Time netxTxDelay = GetNextTransmissionDelay ();
+	Time netxTxDelay = Seconds (0);
 	NS_LOG_DEBUG( "id: " << m_device->GetNode ()->GetId () << " nxtDelay: " << netxTxDelay);
     if (netxTxDelay != Seconds (0))
       {
@@ -179,8 +180,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // Pick a channel on which to transmit the packet
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx (); 
   //std::cout << "txChannel: " << txChannel->GetFrequency() << " rtx: " << (unsigned)m_retxParams.retxLeft <<std::endl;
-//  if (txChannel && m_retxParams.retxLeft > 0 ){ // Proceed with transmission
-   if (txChannel){ // Proceed with transmission
+  //if (txChannel && m_retxParams.retxLeft > 0 ){ // Proceed with transmission
+  if (txChannel){ // Proceed with transmission
   	// Checking if this is the transmission of a new packet
     if (packet != m_retxParams.packet){
       	/////////////////////////////////////////////////////////
@@ -285,6 +286,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
         	(GetSfFromDataRate (replyDataRate));
 
    }else{  // Transmission cannot be performed
+	  std::cout << "m_cannotSendBecauseDutyCycle" << std::endl;
       m_cannotSendBecauseDutyCycle (packet);
     }
 }

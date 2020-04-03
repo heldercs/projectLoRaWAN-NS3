@@ -6,9 +6,9 @@ reset
 set term postscript eps color blacktext "FreeSans-Bold" 10
 set grid
 set key box lt -1 lw 2
-set xrange [200:2000]
-set xtics 500 font ",10"
-set yrange [0:1]
+set xrange [100:1000]
+set xtics 100 font ",10"
+set yrange [0.8:1]
 set ytics font ",10"
 set ylabel "Prob. Success (%)" font "Times-Roman-Bold,16"
 set xlabel "End-Nodes" font "times-Roman-Bold,16"

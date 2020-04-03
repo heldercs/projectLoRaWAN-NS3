@@ -389,7 +389,7 @@ void GetPiMetric (std::string piMetricFile){
 	}
 	//cout << endl;
   	
-	/*  cout << "pi "; 
+/*  	cout << "pi "; 
 	for (int i=0; i<int(piAmounts.size()); i++)
 		cout << piAmounts[i] << " ";
 	cout << endl;
@@ -402,7 +402,7 @@ void GetPiMetric (std::string piMetricFile){
 	rTime = Seconds(simulationTime);
 	//cout << "aT: " << aTime.GetSeconds() << " rT: " << rTime.GetSeconds() << endl;
 	if (aTime.GetSeconds() < rTime.GetSeconds() )
-		Simulator::Schedule (Seconds (100), &GetPiMetric, piMetricFile);
+		Simulator::Schedule (Seconds (10), &GetPiMetric, piMetricFile);
 	/*else{
 		for (int i=0; i<int(piAmounts.size()); i++)
 			cout << piAmounts[i] << " ";
@@ -742,8 +742,8 @@ int main (int argc, char *argv[]){
 		//mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
 #if FLGRTX
 			Ptr<EndDeviceLoraMac> mac = loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
-			mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
 			mac->SetMaxNumberOfTransmissions (MAXRTX);
+			mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
 			// initializer sumRtxDelay 
 			sndTimeDelay.push_back(Seconds(0));
 			statusRtx.push_back(0);

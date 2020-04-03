@@ -6,10 +6,9 @@ reset
 set term postscript eps color blacktext "FreeSans-Bold" 10
 set grid
 set key box lt -1 lw 2
-set xtics 500
-set xrange [100:2100]
-set xtics font ",10"
-set yrange [0:30]
+set xrange [100:1000]
+set xtics 100 font ",10"
+set yrange [0:15]
 set ytics font ",10"
 set ylabel "Throughput (Kbps)" font "Times-Roman-Bold,16"
 set xlabel "# endNodes" font "times-Roman-Bold,16"
