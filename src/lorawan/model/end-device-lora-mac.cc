@@ -161,8 +161,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     // If it is not possible to transmit now because of the duty cycle,
     // or because we are receiving, schedule a tx/retx later
 
-    //Time netxTxDelay = GetNextTransmissionDelay ();
-	Time netxTxDelay = Seconds (0);
+    Time netxTxDelay = GetNextTransmissionDelay ();
+	//Time netxTxDelay = Seconds (0);
 	NS_LOG_DEBUG( "id: " << m_device->GetNode ()->GetId () << " nxtDelay: " << netxTxDelay);
     if (netxTxDelay != Seconds (0))
       {

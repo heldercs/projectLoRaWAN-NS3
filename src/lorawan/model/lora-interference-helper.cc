@@ -152,16 +152,29 @@ LoraInterferenceHelper::~LoraInterferenceHelper ()
 // Values are inverted w.r.t. the paper since here we interpret this as an
 // _isolation_ matrix instead of a cochannel _rejection_ matrix like in
 // Goursaud's paper.
+//const double LoraInterferenceHelper::collisionSnir[6][6] =
+//{
+// SF7  SF8  SF9  SF10 SF11 SF12
+//  {  6, -16, -18, -19, -19, -20},  // SF7
+//  {-24,   6, -20, -22, -22, -22},  // SF8
+//  {-27, -27,   6, -23, -25, -25},  // SF9
+//  {-30, -30, -30,   6, -26, -28},  // SF10
+//  {-33, -33, -33, -33,   6, -29},  // SF11
+//  {-36, -36, -36, -36, -36,   6}   // SF12
+//};
+
+// "Impact of LoRa Imperfect Orthogonality: Analysis of Link-Level Performance," paper, IEEE Communications Letters ( Volume: 22 , Issue: 4 , April 2018 )
 const double LoraInterferenceHelper::collisionSnir[6][6] =
 {
 // SF7  SF8  SF9  SF10 SF11 SF12
-  {  6, -16, -18, -19, -19, -20},  // SF7
-  {-24,   6, -20, -22, -22, -22},  // SF8
-  {-27, -27,   6, -23, -25, -25},  // SF9
-  {-30, -30, -30,   6, -26, -28},  // SF10
-  {-33, -33, -33, -33,   6, -29},  // SF11
-  {-36, -36, -36, -36, -36,   6}   // SF12
+  {  1,  -8,  -9,  -9,  -9,  -9},  // SF7
+  {-11,   1, -11, -12, -13, -13},  // SF8
+  {-15, -13,   1, -13, -14, -15},  // SF9
+  {-19, -18, -17,   1, -17, -18},  // SF10
+  {-22, -22, -21, -20,   1, -20},  // SF11
+  {-25, -25, -25, -24, -23,   1}   // SF12
 };
+
 
 Time LoraInterferenceHelper::oldEventThreshold = Seconds (2);
 

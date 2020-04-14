@@ -144,13 +144,13 @@ int main (int argc, char *argv[]){
 	Time temp;	
 	//uv->SetAttribute("Min", DoubleValue(min));	
 	//uv->SetAttribute("Max", DoubleValue(max));	
-	uv->SetAttribute("Mean", DoubleValue(10));
-	//uv->SetAttribute("Bound", DoubleValue(0.5));
-	//for(int i=0; i<nRun; i++){
+	//uv->SetAttribute("Mean", DoubleValue(10));
+	//uv->SetAttribute("Bound", DoubleValue(12));
+	for(int i=0; i<5; i++){
 		//temp = Seconds(uv->GetValue());
   		//std::cout << "t: " << temp.GetSeconds() << std::endl;
-	  	std::cout << "t: " << uv->GetValue() << std::endl;
-	//}	
+	  	std::cout << "t: " << uv->GetValue(10,12) << std::endl;
+	}	
 
 	return(0);
 }
